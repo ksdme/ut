@@ -1,3 +1,11 @@
+use clap::Parser;
+
+use crate::tool::Tool;
+
+mod tool;
+pub mod tools;
+
 fn main() {
-    println!("Hello, world!");
+    let tool = tools::crypto::token::TokenGenerator::parse();
+    println!("{:?}", tool.execute());
 }
