@@ -6,7 +6,7 @@ use rand::distr::{Distribution, slice::Choose};
 use serde_json::json;
 
 #[derive(clap::Parser, Default, Debug)]
-#[command(about = "Generate random token/string.")]
+#[command(about = "Generate random token/string")]
 pub struct TokenGenerator {
     /// Include uppercase letters.
     #[arg(long = "uppercase", default_value_t = true, action = clap::ArgAction::Set)]
