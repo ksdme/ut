@@ -10,6 +10,8 @@ use crate::tool::{Output, Tool};
 #[derive(Debug, clap::Parser)]
 #[command(about = "Generate a hash from text or stdin")]
 pub struct Hash {
+    /// The contents to hash. Use a - to indicate that the contents must
+    /// be read from stdin.
     contents: String,
 
     /// The hash algorithm.
@@ -50,6 +52,7 @@ pub enum Digest {
 
 impl Tool for Hash {
     fn execute(&self) -> anyhow::Result<Option<Output>> {
+        // TODO: It would be nicer if we streamed the contents instead.
         let bytes = if self.contents.trim() == "-" {
             let stdin = std::io::stdin();
             let mut lock = stdin.lock();
