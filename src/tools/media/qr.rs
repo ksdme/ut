@@ -21,6 +21,10 @@ pub struct QRGenerator {
     /// The output file path for the generated QR Code image.
     #[arg(short = 'o', long = "out-file")]
     out_file: Option<String>,
+
+    /// Open the generated image after saving it to file.
+    #[arg(long = "open", default_value_t = false)]
+    open: bool,
 }
 
 impl Tool for QRGenerator {
@@ -57,8 +61,12 @@ impl Tool for QRGenerator {
             .build();
 
         image
-            .save(out_path)
+            .save(&out_path)
             .context("Could not write the image to file")?;
+
+        if self.open {
+            open::that_detached(&out_path).context("Could not open the image")?;
+        }
 
         Ok(None)
     }
