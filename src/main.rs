@@ -65,6 +65,7 @@ fn main() -> anyhow::Result<()> {
             "uuid",
             "uuid4"
         ),
-        (tools::crypto::uuid5::UUID5Generator, "uuid-v5", "uuid5")
+        (tools::crypto::uuid5::UUID5Generator, "uuid-v5", "uuid5"),
+        (tools::media::qr::QRGenerator, "qr",)
     )
 }
