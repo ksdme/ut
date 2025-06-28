@@ -18,6 +18,10 @@ pub struct QRGenerator {
     #[arg(long = "bg-color", default_value = "#fff")]
     background_color: String,
 
+    /// Error correction level on the QR Code
+    #[arg(long = "ec-level", default_value = "medium")]
+    error_correction_level: ErrorCorrectionLevel,
+
     /// The output file path for the generated QR Code image.
     #[arg(short = 'o', long = "out-file")]
     out_file: Option<String>,
@@ -25,6 +29,14 @@ pub struct QRGenerator {
     /// Open the generated image after saving it to file.
     #[arg(long = "open", default_value_t = false)]
     open: bool,
+}
+
+#[derive(Debug, Clone, clap::ValueEnum)]
+enum ErrorCorrectionLevel {
+    Low,
+    Medium,
+    Quartile,
+    High,
 }
 
 impl Tool for QRGenerator {
@@ -42,8 +54,16 @@ impl Tool for QRGenerator {
             return Err(anyhow!("File already exists at output path"));
         }
 
-        let code =
-            qrcode::QrCode::new(self.contents.as_bytes()).context("Could not construct QR Code")?;
+        let code = qrcode::QrCode::with_error_correction_level(
+            self.contents.as_bytes(),
+            match self.error_correction_level {
+                ErrorCorrectionLevel::Low => qrcode::EcLevel::L,
+                ErrorCorrectionLevel::Medium => qrcode::EcLevel::M,
+                ErrorCorrectionLevel::Quartile => qrcode::EcLevel::Q,
+                ErrorCorrectionLevel::High => qrcode::EcLevel::H,
+            },
+        )
+        .context("Could not construct QR Code")?;
 
         let [fr, fg, fb, _] = csscolorparser::parse(&self.foreground_color)
             .context("Could not parse foreground color")?
