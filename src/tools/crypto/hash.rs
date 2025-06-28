@@ -86,6 +86,6 @@ fn hash<D: digest::Digest>(contents: Vec<u8>, digest: Digest) -> String {
     match digest {
         Digest::Hex => base16ct::lower::encode_string(&hash),
         Digest::Base64 => base64ct::Base64::encode_string(&hash),
-        Digest::Base64URL => base64ct::Base64Url::encode_string(&hash),
+        Digest::Base64URL => base64ct::Base64UrlUnpadded::encode_string(&hash),
     }
 }
