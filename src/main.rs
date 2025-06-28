@@ -6,6 +6,6 @@ mod tool;
 pub mod tools;
 
 fn main() {
-    let tool = tools::crypto::token::TokenGenerator::parse();
+    let tool = tools::crypto::hash::Hash::parse();
     println!("{:?}", tool.execute());
 }
