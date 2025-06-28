@@ -1,3 +1,4 @@
+/// Based on https://it-tools.tech/hash-text
 use std::io::Read;
 
 use anyhow::Context;
