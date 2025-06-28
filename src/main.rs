@@ -56,6 +56,7 @@ fn main() -> anyhow::Result<()> {
             "secret",
             "password"
         ),
+        (tools::crypto::ulid::ULIDGenerator, "ulid",),
         (tools::crypto::uuid1::UUID1Generator, "uuid-v1", "uuid1"),
         (tools::crypto::uuid3::UUID3Generator, "uuid-v3", "uuid3"),
         (
