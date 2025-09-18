@@ -14,7 +14,7 @@ pub struct Lorem {
     min_sentences: usize,
 
     /// Maximum number of sentences per paragraph
-    #[arg(long = "max-sentences", default_value = "7")]
+    #[arg(long = "max-sentences", default_value = "8")]
     max_sentences: usize,
 
     /// Minimum number of words per sentence
