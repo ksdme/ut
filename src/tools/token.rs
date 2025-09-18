@@ -4,7 +4,7 @@ use clap::{Command, CommandFactory, Parser};
 use rand::{Rng, rngs::OsRng};
 
 #[derive(Parser, Debug)]
-#[command(name = "token")]
+#[command(name = "token", about = "Generate a cryptographically secure random token.")]
 pub struct Token {
     /// Length of the token to generate
     #[arg(long, short, default_value = "64")]
