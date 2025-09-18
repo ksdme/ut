@@ -166,7 +166,7 @@ fn split_words(text: &str) -> Vec<String> {
     words
 }
 
-fn capitalize_first(word: &str) -> String {
+pub fn capitalize_first(word: &str) -> String {
     let mut chars = word.chars();
     match chars.next() {
         None => String::new(),
