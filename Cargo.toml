@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.99"
 clap = { version = "4.5.47", features = ["derive"] }
+rand = "0.8"
 serde = { version = "1.0.225", features = ["derive"] }
 serde_json = "1.0.145"
 urlencoding = "2.1.3"

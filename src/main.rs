@@ -50,8 +50,10 @@ fn main() -> anyhow::Result<()> {
 
     let output = toolbox!(
         cli,
+        (tools::token::Token, "token",),
         (tools::url::Url, "url",)
-    ).context("Could not run tool")?;
+    )
+    .context("Could not run tool")?;
 
     if let Some(Output::JsonValue(value)) = output {
         println!(
