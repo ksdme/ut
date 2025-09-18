@@ -50,6 +50,7 @@ fn main() -> anyhow::Result<()> {
 
     let output = toolbox!(
         cli,
+        (tools::case::Case, "case",),
         (tools::token::Token, "token",),
         (tools::url::Url, "url",)
     )
