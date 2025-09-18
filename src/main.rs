@@ -1,3 +1,6 @@
+mod tool;
+mod tools;
+
 fn main() {
-    println!("Hello, world!");
+    println!("ut :)");
 }
