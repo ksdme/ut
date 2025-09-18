@@ -20,6 +20,7 @@ It includes tools like hashing utilities, secret generators, file server etc.
 
 ## Guidelines
 
+- src/tools/url.rs is a good reference example.
 - Use stdlib wherever possible.
 - Use popular cargo crates if necessary.
 - Wherever possible, tools should return values instead of printing them.
