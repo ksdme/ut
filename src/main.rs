@@ -58,6 +58,7 @@ fn main() -> anyhow::Result<()> {
         (tools::hash::HashTool, "hash",),
         (tools::http_status::HttpTool, "http-status",),
         (tools::lorem::LoremTool, "lorem",),
+        (tools::random::RandomTool, "random",),
         (tools::token::TokenTool, "token",),
         (tools::url::UrlTool, "url",),
         (tools::uuid::UUIDTool, "uuid",)
