@@ -32,17 +32,47 @@ impl Tool for DiffTool {
             None => get_content_from_editor("# b")?,
         };
 
+        let line_no_width = (first_content
+            .lines()
+            .count()
+            .max(second_content.lines().count()) as f64)
+            .log10()
+            .ceil() as usize;
+
         let diff = TextDiff::from_lines(&first_content, &second_content)
             .iter_all_changes()
-            .map(|change| match change.tag() {
-                ChangeTag::Equal => format!(" {}", change.to_string()),
-                ChangeTag::Delete => format!("{}{}", "-".red(), change.to_string().red()),
-                ChangeTag::Insert => format!("{}{}", "+".green(), change.to_string().green()),
+            .map(|change| {
+                let line = format!(
+                    "{} {:>width$} {:>width$} │ {}",
+                    match change.tag() {
+                        ChangeTag::Equal => " ",
+                        ChangeTag::Delete => "-",
+                        ChangeTag::Insert => "+",
+                    },
+                    change
+                        .old_index()
+                        .map(|e| e.to_string())
+                        .unwrap_or_default(),
+                    change
+                        .new_index()
+                        .map(|e| e.to_string())
+                        .unwrap_or_default(),
+                    change.to_string(),
+                    width = line_no_width,
+                );
+
+                match change.tag() {
+                    ChangeTag::Equal => line,
+                    ChangeTag::Delete => line.red().to_string(),
+                    ChangeTag::Insert => line.green().to_string(),
+                }
             })
             .collect::<Vec<String>>()
             .join("");
 
-        println!("{}", diff);
+        // The result is expected to be visual, so pipe it to stdout instead of
+        // returning the value.
+        print!("{}", diff);
 
         Ok(None)
     }
