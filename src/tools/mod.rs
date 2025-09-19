@@ -3,6 +3,7 @@ pub mod case;
 pub mod hash;
 pub mod http_status;
 pub mod lorem;
+pub mod qr;
 pub mod random;
 pub mod token;
 pub mod url;
