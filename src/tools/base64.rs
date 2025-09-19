@@ -1,4 +1,7 @@
-use crate::tool::{Output, Tool};
+use crate::{
+    args::Input,
+    tool::{Output, Tool},
+};
 use anyhow::Context;
 use base64::{Engine as _, engine::general_purpose};
 use clap::{Command, CommandFactory, Parser, Subcommand};
@@ -14,14 +17,14 @@ pub struct Base64Tool {
 enum Base64Command {
     /// base64 encode text
     Encode {
-        text: String,
+        text: Input,
         /// use urlsafe encoding
         #[arg(long)]
         urlsafe: bool,
     },
     /// base64 decode text
     Decode {
-        text: String,
+        text: Input,
         /// use urlsafe decoding
         #[arg(long)]
         urlsafe: bool,
@@ -37,9 +40,9 @@ impl Tool for Base64Tool {
         match &self.command {
             Base64Command::Encode { text, urlsafe } => {
                 let encoded = if *urlsafe {
-                    general_purpose::URL_SAFE.encode(text)
+                    general_purpose::URL_SAFE.encode(&text.0)
                 } else {
-                    general_purpose::STANDARD.encode(text)
+                    general_purpose::STANDARD.encode(&text.0)
                 };
 
                 Ok(Some(Output::JsonValue(serde_json::json!(encoded))))
@@ -52,7 +55,7 @@ impl Tool for Base64Tool {
                 };
 
                 Ok(Some(Output::Bytes(
-                    engine.decode(text).context("Could not decode base64")?,
+                    engine.decode(&text.0).context("Could not decode base64")?,
                 )))
             }
         }

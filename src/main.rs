@@ -1,3 +1,4 @@
+mod args;
 mod tool;
 mod tools;
 
@@ -69,7 +70,7 @@ fn main() -> anyhow::Result<()> {
                 .context("Could not write bytes to stdout")?;
         }
         Some(Output::JsonValue(value)) => {
-            println!(
+            print!(
                 "{}",
                 serde_json::to_string_pretty(&value).context("Could not serialize result")?
             );
