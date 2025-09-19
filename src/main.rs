@@ -56,6 +56,7 @@ fn main() -> anyhow::Result<()> {
         (tools::base64::Base64Tool, "base64",),
         (tools::case::CaseTool, "case",),
         (tools::color::ColorConvertTool, "color-convert",),
+        (tools::diff::DiffTool, "diff",),
         (tools::hash::HashTool, "hash",),
         (tools::http::HttpStatusTool, "http-status",),
         (tools::lorem::LoremTool, "lorem",),

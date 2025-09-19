@@ -20,3 +20,14 @@ num-traits = "0.2.19"
 qrcode = "0.14"
 image = "0.25"
 csscolorparser = { version = "0.7", features = ["lab"] }
+tokio = { version = "1.0", features = ["full"] }
+axum = "0.7"
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5", features = ["fs", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+percent-encoding = "2.3"
+mime_guess = "2.0"
+edit = "0.1"
+similar = "2.6"
+colored = "2.1"

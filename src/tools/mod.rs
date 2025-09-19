@@ -1,6 +1,7 @@
 pub mod base64;
 pub mod case;
 pub mod color;
+pub mod diff;
 pub mod hash;
 pub mod http;
 pub mod lorem;
