@@ -1,6 +1,8 @@
 mod tool;
 mod tools;
 
+use std::io::{self, Write};
+
 use clap::FromArgMatches;
 
 use crate::tool::{Output, Tool};
@@ -50,6 +52,7 @@ fn main() -> anyhow::Result<()> {
 
     let output = toolbox!(
         cli,
+        (tools::base64::Base64Tool, "base64",),
         (tools::case::CaseTool, "case",),
         (tools::http_status::HttpTool, "http-status",),
         (tools::lorem::LoremTool, "lorem",),
@@ -59,11 +62,19 @@ fn main() -> anyhow::Result<()> {
     )
     .context("Could not run tool")?;
 
-    if let Some(Output::JsonValue(value)) = output {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&value).context("Could not serialize result")?
-        );
+    match output {
+        Some(Output::Bytes(bytes)) => {
+            io::stdout()
+                .write_all(&bytes)
+                .context("Could not write bytes to stdout")?;
+        }
+        Some(Output::JsonValue(value)) => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&value).context("Could not serialize result")?
+            );
+        }
+        None => {}
     }
 
     Ok(())

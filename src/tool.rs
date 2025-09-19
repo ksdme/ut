@@ -11,5 +11,6 @@ pub trait Tool {
 
 #[derive(Debug)]
 pub enum Output {
+    Bytes(Vec<u8>),
     JsonValue(serde_json::Value),
 }

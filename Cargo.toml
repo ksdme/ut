@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.99"
+base64 = "0.22.1"
 clap = { version = "4.5.47", features = ["derive"] }
 rand = "0.8"
 serde = { version = "1.0.225", features = ["derive"] }
