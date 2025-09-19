@@ -54,7 +54,8 @@ fn main() -> anyhow::Result<()> {
         (tools::http_status::HttpTool, "http-status",),
         (tools::lorem::LoremTool, "lorem",),
         (tools::token::TokenTool, "token",),
-        (tools::url::UrlTool, "url",)
+        (tools::url::UrlTool, "url",),
+        (tools::uuid::UUIDTool, "uuid",)
     )
     .context("Could not run tool")?;
 
