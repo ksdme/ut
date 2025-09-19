@@ -2,7 +2,7 @@ pub mod base64;
 pub mod case;
 pub mod color;
 pub mod hash;
-pub mod http_status;
+pub mod http;
 pub mod lorem;
 pub mod qr;
 pub mod random;

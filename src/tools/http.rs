@@ -4,14 +4,14 @@ use clap::{Command, CommandFactory, Parser};
 
 #[derive(Parser, Debug)]
 #[command(name = "http-status")]
-pub struct HttpTool {
+pub struct HttpStatusTool {
     /// Optional, status code to lookup
     code: Option<u16>,
 }
 
-impl Tool for HttpTool {
+impl Tool for HttpStatusTool {
     fn cli() -> Command {
-        HttpTool::command()
+        HttpStatusTool::command()
     }
 
     fn execute(&self) -> anyhow::Result<Option<Output>> {

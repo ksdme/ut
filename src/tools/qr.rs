@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 #[command(name = "qr")]
-pub struct QrTool {
+pub struct QRTool {
     /// The text or URL to encode as QR code
     text: String,
 
@@ -15,9 +15,9 @@ pub struct QrTool {
     output: Option<PathBuf>,
 }
 
-impl Tool for QrTool {
+impl Tool for QRTool {
     fn cli() -> Command {
-        QrTool::command()
+        QRTool::command()
     }
 
     fn execute(&self) -> Result<Option<Output>> {
