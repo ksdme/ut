@@ -15,17 +15,19 @@ pub struct Base64Tool {
 
 #[derive(Subcommand, Debug)]
 enum Base64Command {
-    /// base64 encode text
+    /// Base64 encode contents
     Encode {
+        /// Input to encode (use "-" for stdin)
         text: Input,
-        /// use urlsafe encoding
+        /// Encode with urlsafe character set
         #[arg(long)]
         urlsafe: bool,
     },
-    /// base64 decode text
+    /// Base64 decode contents
     Decode {
+        /// Input to decode (use "-" for stdin)
         text: Input,
-        /// use urlsafe decoding
+        /// Decode with urlsafe character set
         #[arg(long)]
         urlsafe: bool,
     },
