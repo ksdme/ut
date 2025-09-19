@@ -10,5 +10,8 @@ clap = { version = "4.5.47", features = ["derive"] }
 rand = "0.8"
 serde = { version = "1.0.225", features = ["derive"] }
 serde_json = "1.0.145"
+sha2 = "0.10"
+sha1 = "0.10"
+md-5 = "0.10"
 urlencoding = "2.1.3"
 uuid = { version = "1.11.0", features = ["v1", "v3", "v4", "v5"] }
