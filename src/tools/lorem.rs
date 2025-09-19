@@ -4,7 +4,7 @@ use rand::{Rng, rngs::OsRng};
 
 #[derive(Parser, Debug)]
 #[command(name = "lorem")]
-pub struct Lorem {
+pub struct LoremTool {
     /// Number of paragraphs to generate
     #[arg(short = 'p', long = "paragraphs", default_value = "3")]
     paragraphs: usize,
@@ -26,7 +26,7 @@ pub struct Lorem {
     max_words: usize,
 }
 
-impl Lorem {
+impl LoremTool {
     fn generate_sentence(&self, rng: &mut impl Rng) -> String {
         let sentence = (0..rng.gen_range(self.min_words..=self.max_words))
             .map(|_| LOREM_WORDS[rng.gen_range(0..LOREM_WORDS.len())])
@@ -53,9 +53,9 @@ impl Lorem {
     }
 }
 
-impl Tool for Lorem {
+impl Tool for LoremTool {
     fn cli() -> Command {
-        Lorem::command()
+        LoremTool::command()
     }
 
     fn execute(&self) -> anyhow::Result<Option<Output>> {

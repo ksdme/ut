@@ -8,7 +8,7 @@ use rand::{Rng, rngs::OsRng};
     name = "token",
     about = "Generate a cryptographically secure random token."
 )]
-pub struct Token {
+pub struct TokenTool {
     /// Length of the token to generate
     #[arg(long, short, default_value = "64")]
     length: usize,
@@ -30,9 +30,9 @@ pub struct Token {
     no_symbols: bool,
 }
 
-impl Tool for Token {
+impl Tool for TokenTool {
     fn cli() -> Command {
-        Token::command()
+        TokenTool::command()
     }
 
     fn execute(&self) -> anyhow::Result<Option<Output>> {

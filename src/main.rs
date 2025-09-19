@@ -50,11 +50,11 @@ fn main() -> anyhow::Result<()> {
 
     let output = toolbox!(
         cli,
-        (tools::case::Case, "case",),
-        (tools::http_status::Http, "http-status",),
-        (tools::lorem::Lorem, "lorem",),
-        (tools::token::Token, "token",),
-        (tools::url::Url, "url",)
+        (tools::case::CaseTool, "case",),
+        (tools::http_status::HttpTool, "http-status",),
+        (tools::lorem::LoremTool, "lorem",),
+        (tools::token::TokenTool, "token",),
+        (tools::url::UrlTool, "url",)
     )
     .context("Could not run tool")?;
 

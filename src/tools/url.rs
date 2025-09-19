@@ -4,7 +4,7 @@ use clap::{Command, CommandFactory, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[command(name = "url")]
-pub struct Url {
+pub struct UrlTool {
     #[command(subcommand)]
     command: UrlCommand,
 }
@@ -17,9 +17,9 @@ enum UrlCommand {
     Decode { text: String },
 }
 
-impl Tool for Url {
+impl Tool for UrlTool {
     fn cli() -> Command {
-        Url::command()
+        UrlTool::command()
     }
 
     fn execute(&self) -> anyhow::Result<Option<Output>> {

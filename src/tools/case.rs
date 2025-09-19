@@ -3,7 +3,7 @@ use clap::{Command, CommandFactory, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[command(name = "case")]
-pub struct Case {
+pub struct CaseTool {
     #[command(subcommand)]
     command: CaseCommand,
 }
@@ -28,9 +28,9 @@ enum CaseCommand {
     Snake { text: String },
 }
 
-impl Tool for Case {
+impl Tool for CaseTool {
     fn cli() -> Command {
-        Case::command()
+        CaseTool::command()
     }
 
     fn execute(&self) -> anyhow::Result<Option<Output>> {
@@ -138,7 +138,7 @@ fn split_words(text: &str) -> Vec<String> {
 
     while let Some(ch) = chars.next() {
         // Split on explicit separators (space, underscore, hyphen)
-        if ch.is_whitespace() || ch == '_' || ch == '-' {
+        if ch.is_whitespace() || ch == '_' || ch == '-' || ch == '.' {
             if !current_word.is_empty() {
                 words.push(current_word.clone());
                 current_word.clear();
