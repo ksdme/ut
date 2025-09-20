@@ -39,40 +39,115 @@ impl Tool for DiffTool {
             .log10()
             .ceil() as usize;
 
-        let diff = TextDiff::from_lines(&first_content, &second_content)
-            .iter_all_changes()
-            .map(|change| {
-                let line = format!(
-                    "{} {:>width$} {:>width$} │ {}",
-                    match change.tag() {
-                        ChangeTag::Equal => " ",
-                        ChangeTag::Delete => "-",
-                        ChangeTag::Insert => "+",
-                    },
-                    change
-                        .old_index()
-                        .map(|e| e.to_string())
-                        .unwrap_or_default(),
-                    change
-                        .new_index()
-                        .map(|e| e.to_string())
-                        .unwrap_or_default(),
-                    change.to_string(),
-                    width = line_no_width,
-                );
+        let mut buffer = String::new();
+        let mut lines: Vec<(Option<u64>, Option<u64>, String)> = vec![];
+
+        let mut o_line_no: u64 = 0;
+        let mut o_o_line_no = o_line_no;
+
+        let mut n_line_no: u64 = 0;
+        let mut o_n_line_no = n_line_no;
+
+        for change in TextDiff::from_chars(&first_content, &second_content).iter_all_changes() {
+            let Some(ch) = change.as_str() else {
+                continue;
+            };
+
+            // Handle line breaks so we can keep track of line numbers.
+            if ch == "\n" {
+                o_o_line_no = o_line_no;
+                o_n_line_no = n_line_no;
+
+                let push: bool;
+                match change.tag() {
+                    ChangeTag::Equal => {
+                        push = true;
+
+                        buffer.push_str(&ch);
+
+                        o_line_no += 1;
+                        n_line_no += 1;
+                    }
+                    ChangeTag::Delete => {
+                        push = buffer.is_empty();
+
+                        buffer.push_str(&"↙".black().on_red().to_string());
+                        if push {
+                            buffer.push_str(&ch);
+                        }
+
+                        o_line_no += 1;
+                    }
+                    ChangeTag::Insert => {
+                        push = true;
+
+                        buffer.push_str(&format!("{}{}", "↙".black().on_green(), ch));
+
+                        n_line_no += 1;
+                    }
+                };
+
+                if push {
+                    lines.push((
+                        if o_o_line_no == o_line_no {
+                            None
+                        } else {
+                            Some(o_line_no)
+                        },
+                        if o_n_line_no == n_line_no {
+                            None
+                        } else {
+                            Some(n_line_no)
+                        },
+                        buffer.clone(),
+                    ));
+                    buffer.clear();
+                }
+            } else {
+                // Represent meta characters.
+                let ch = match change.tag() {
+                    ChangeTag::Equal if ch == "\r" => "␍",
+                    _ => ch,
+                };
 
                 match change.tag() {
-                    ChangeTag::Equal => line,
-                    ChangeTag::Delete => line.red().to_string(),
-                    ChangeTag::Insert => line.green().to_string(),
+                    ChangeTag::Equal => buffer.push_str(&ch),
+                    ChangeTag::Delete => buffer.push_str(&ch.black().on_red().to_string()),
+                    ChangeTag::Insert => buffer.push_str(&ch.black().on_green().to_string()),
                 }
-            })
-            .collect::<Vec<String>>()
-            .join("");
+            }
+        }
 
-        // The result is expected to be visual, so pipe it to stdout instead of
-        // returning the value.
-        print!("{}", diff);
+        // Flush the last line if the files weren't terminated with a newline.
+        if !buffer.is_empty() {
+            lines.push((
+                if o_o_line_no == o_line_no {
+                    None
+                } else {
+                    Some(o_line_no)
+                },
+                if o_n_line_no == n_line_no {
+                    None
+                } else {
+                    Some(n_line_no)
+                },
+                buffer.clone(),
+            ));
+        }
+
+        for (o_line_no, n_line_no, line) in lines.iter() {
+            print!(
+                "{} {}",
+                format!(
+                    "{:>width$} {:>width$} ┊",
+                    o_line_no.map(|l| l.to_string()).unwrap_or_default(),
+                    n_line_no.map(|l| l.to_string()).unwrap_or_default(),
+                    width = line_no_width,
+                )
+                .dimmed(),
+                line,
+            );
+        }
 
         Ok(None)
     }
