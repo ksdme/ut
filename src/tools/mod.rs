@@ -7,6 +7,7 @@ pub mod http;
 pub mod lorem;
 pub mod qr;
 pub mod random;
+pub mod serve;
 pub mod token;
 pub mod url;
 pub mod uuid;

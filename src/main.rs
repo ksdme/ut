@@ -62,6 +62,7 @@ fn main() -> anyhow::Result<()> {
         (tools::lorem::LoremTool, "lorem",),
         (tools::qr::QRTool, "qr",),
         (tools::random::RandomTool, "random",),
+        (tools::serve::ServeTool, "serve",),
         (tools::token::TokenTool, "token",),
         (tools::url::UrlTool, "url",),
         (tools::uuid::UUIDTool, "uuid",)
