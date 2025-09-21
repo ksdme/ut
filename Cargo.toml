@@ -26,6 +26,8 @@ colored = "2.1"
 axum = "0.8"
 tokio = { version = "1.0", features = ["full"] }
 tower = "0.5"
-tower-http = { version = "0.6", features = ["fs", "util"] }
+tower-http = { version = "0.6", features = ["fs", "util", "trace"] }
 normalize-path = "0.2.1"
 relative-path = "2.0.1"
+tracing = "0.1"
+tracing-subscriber = "0.3"

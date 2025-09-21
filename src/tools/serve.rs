@@ -12,6 +12,7 @@ use std::{
     fs,
     path::{Component, PathBuf},
 };
+use tracing_subscriber;
 
 #[derive(Parser, Debug)]
 #[command(name = "serve")]
@@ -35,6 +36,10 @@ impl Tool for ServeTool {
     }
 
     fn execute(&self) -> anyhow::Result<Option<Output>> {
+        tracing_subscriber::fmt()
+            .with_max_level(tracing::Level::DEBUG)
+            .init();
+
         tokio::runtime::Runtime::new()
             .context("Could not create tokio runtime")?
             .block_on(self.run())
@@ -62,8 +67,10 @@ impl ServeTool {
         let app = axum::Router::new()
             // your app state for other routes if you want
             .with_state(root.clone())
-            .fallback_service(serve_dir);
+            .fallback_service(serve_dir)
+            .layer(tower_http::trace::TraceLayer::new_for_http());
 
+        tracing::info!("listening on {}:{}", self.host, self.port);
         axum::serve(listener, app)
             .await
             .context("Could not serve")?;
