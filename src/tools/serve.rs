@@ -1,33 +1,56 @@
 use crate::tool::{Output, Tool};
 use anyhow::Context;
 use axum::{
-    extract::{OriginalUri, State},
+    extract::{OriginalUri, Request, State},
     handler::Handler,
-    http::StatusCode,
-    response::IntoResponse,
+    http::{StatusCode, header},
+    middleware::{self, Next},
+    response::{IntoResponse, Response},
 };
+use axum_extra::headers::{Authorization, Header, authorization::Basic};
 use clap::{Command, CommandFactory, Parser};
 use relative_path::{PathExt, RelativePathBuf};
 use std::{
     fs,
     path::{Component, PathBuf},
+    str::FromStr,
 };
 use tracing_subscriber;
 
 #[derive(Parser, Debug)]
 #[command(name = "serve")]
 pub struct ServeTool {
-    /// Directory to serve files from
+    /// Path to the directory to serve
     #[arg(short, long, default_value = ".")]
     directory: PathBuf,
 
-    /// Port to bind the server to
+    /// Port number the server should listen to
     #[arg(short, long, default_value = "3000")]
     port: u16,
 
-    /// Host address to bind to
+    /// Host address the server should bind to
     #[arg(long, default_value = "127.0.0.1")]
     host: String,
+
+    /// Authentication credentials (username:password)
+    #[arg(long)]
+    auth: Option<Auth>,
+}
+
+#[derive(Debug, Clone)]
+struct Auth(String, String);
+
+impl FromStr for Auth {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().split_once(':') {
+            Some((u, _)) if u.is_empty() => Err("Username cannot be empty".to_string()),
+            Some((_, p)) if p.is_empty() => Err("Password cannot be empty".to_string()),
+            Some((u, p)) => Ok(Auth(u.to_string(), p.to_string())),
+            _ => Err("Expected a colon separated username password".to_string()),
+        }
+    }
 }
 
 impl Tool for ServeTool {
@@ -64,11 +87,19 @@ impl ServeTool {
             .append_index_html_on_directories(true)
             .fallback(list_dir.with_state(root.clone()));
 
-        let app = axum::Router::new()
+        let mut app = axum::Router::new()
             // your app state for other routes if you want
             .with_state(root.clone())
             .fallback_service(serve_dir)
             .layer(tower_http::trace::TraceLayer::new_for_http());
+
+        if let Some(auth) = &self.auth {
+            tracing::debug!("auth is enabled");
+            app = app.layer(middleware::from_fn_with_state(
+                auth.clone(),
+                basic_auth_middleware,
+            ));
+        }
 
         tracing::info!("listening on {}:{}", self.host, self.port);
         axum::serve(listener, app)
@@ -207,4 +238,21 @@ fn for_listing_item(path: &RelativePathBuf) -> Option<(String, String)> {
         format!("/{}", encoded.join("/")),
         path.file_name().unwrap_or("/").to_string(),
     ))
+}
+
+// Enforces authentication.
+async fn basic_auth_middleware(State(auth): State<Auth>, request: Request, next: Next) -> Response {
+    let headers = request.headers().get_all(header::AUTHORIZATION);
+    if let Ok(basic) = Authorization::<Basic>::decode(&mut headers.iter()) {
+        if basic.username() == auth.0 && basic.password() == auth.1 {
+            return next.run(request).await;
+        }
+    }
+
+    (
+        StatusCode::UNAUTHORIZED,
+        [(header::WWW_AUTHENTICATE, "Basic realm=\"ut serve\"")],
+        "Unauthorized",
+    )
+        .into_response()
 }

@@ -24,6 +24,7 @@ edit = "0.1"
 similar = "2.6"
 colored = "2.1"
 axum = "0.8"
+axum-extra = { version = "0.9", features = ["typed-header"] }
 tokio = { version = "1.0", features = ["full"] }
 tower = "0.5"
 tower-http = { version = "0.6", features = ["fs", "util", "trace"] }
