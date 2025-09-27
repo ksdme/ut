@@ -12,7 +12,7 @@ use clap::{Command, CommandFactory, Parser};
 use relative_path::{PathExt, RelativePathBuf};
 use std::{
     fs,
-    path::{Component, PathBuf},
+    path::{Component, Path, PathBuf},
     str::FromStr,
 };
 use tracing_subscriber;
@@ -110,32 +110,45 @@ impl ServeTool {
     }
 }
 
+// Resolve the file name on disk based on the url.
+// Lifted from https://docs.rs/tower-http/0.6.6/src/tower_http/services/fs/serve_dir/mod.rs.html#453
+fn build_and_validate_path(base_path: &Path, requested_path: &str) -> Option<PathBuf> {
+    let path = requested_path.trim_start_matches('/');
+
+    let path_decoded = urlencoding::decode(path.as_ref()).ok()?;
+    let path_decoded = Path::new(&*path_decoded);
+
+    let mut abs_path = base_path.to_path_buf();
+    for component in path_decoded.components() {
+        match component {
+            Component::Normal(comp) => {
+                // Protect against paths like `/foo/c:/bar/baz`
+                if Path::new(&comp)
+                    .components()
+                    .all(|c| matches!(c, Component::Normal(_)))
+                {
+                    abs_path.push(comp)
+                } else {
+                    return None;
+                }
+            }
+            Component::CurDir => {}
+            Component::Prefix(_) | Component::RootDir | Component::ParentDir => {
+                return None;
+            }
+        }
+    }
+    Some(abs_path)
+}
+
 async fn list_dir(
     State(ref root): State<PathBuf>,
     OriginalUri(uri): OriginalUri,
 ) -> Result<impl IntoResponse, impl IntoResponse> {
-    // Construct the relative path of the file.
-    let mut relative_path = PathBuf::new();
-    for part in uri.path().trim_matches('/').split("/") {
-        relative_path.push(
-            urlencoding::decode(part)
-                .map_err(|_| (StatusCode::BAD_REQUEST,))?
-                .to_string(),
-        );
-    }
-
-    // The path cannot container anything but regular names.
-    if relative_path.components().any(|c| match c {
-        Component::CurDir => true,
-        Component::ParentDir => true,
-        Component::Prefix(_) => true,
-        _ => false,
-    }) {
+    // Turn the url path into a filesystem path.
+    let Some(absolute_path) = build_and_validate_path(root, uri.path()) else {
         return Err((StatusCode::BAD_REQUEST,));
-    }
-
-    // This the path on the disk of the file/directory.
-    let absolute_path = root.join(&relative_path);
+    };
     if !absolute_path.exists() {
         return Err((StatusCode::NOT_FOUND,));
     }
@@ -146,13 +159,16 @@ async fn list_dir(
     let mut html = String::new();
 
     // Add .. entry.
-    // Check if we are at the root.
-    if relative_path.components().count() > 0
+    // Resolve the relative path of the entry.
+    if let Some(relative_path) = absolute_path
+        .relative_to(root)
+        .ok()
+        // Check if we are at the root.
+        && relative_path.components().count() > 0
         // Resolve the location for the parent path.
-        && let Some((location, _)) = absolute_path
+        && let Some((location, _)) = relative_path
             .parent()
-            .and_then(|parent| parent.relative_to(root).ok())
-            .and_then(|parent_relative| for_listing_item(&parent_relative))
+            .and_then(|relative_parent| for_listing_item(&relative_parent.to_relative_path_buf()))
     {
         html.push_str(&format!(
             r#"
@@ -252,7 +268,6 @@ async fn basic_auth_middleware(State(auth): State<Auth>, request: Request, next:
     (
         StatusCode::UNAUTHORIZED,
         [(header::WWW_AUTHENTICATE, "Basic realm=\"ut serve\"")],
-        "Unauthorized",
     )
         .into_response()
 }
