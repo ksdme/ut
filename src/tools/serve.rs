@@ -209,7 +209,7 @@ async fn list_dir(
                 "#,
                 if is_dir { "dir" } else { "" },
                 location,
-                name,
+                html_escape::encode_safe(&name),
             ));
         }
     }
