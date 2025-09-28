@@ -13,14 +13,18 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Padding, Paragraph},
 };
 use regex::Regex;
-use std::io::{self, Stdout};
+use std::{fs, io::{self, Stdout}, path::PathBuf};
 use tui_textarea::{Input, TextArea};
 
 use crate::tool::Tool;
 
 #[derive(Parser, Debug)]
 #[command(name = "regex")]
-pub struct RegexTool {}
+pub struct RegexTool {
+    /// The file to load the contents of test string from.
+    #[arg(short, long)]
+    test: Option<PathBuf>
+}
 
 impl Tool for RegexTool {
     fn cli() -> clap::Command {
@@ -36,7 +40,7 @@ impl Tool for RegexTool {
         let backend = CrosstermBackend::new(stdout);
         let mut terminal = Terminal::new(backend)?;
 
-        let mut app = App::default();
+        let mut app = App::new(self.test.as_ref());
         let res = run_app_loop(&mut terminal, &mut app);
 
         // Restore terminal
@@ -71,12 +75,17 @@ struct App<'a> {
     regex_error: Option<String>,
 }
 
-impl<'a> Default for App<'a> {
-    fn default() -> App<'a> {
+impl<'a> App<'a> {
+    fn new(test_file: Option<&PathBuf>) -> App<'a> {
         let mut regex_textarea = TextArea::default();
         regex_textarea.set_cursor_line_style(Style::new());
 
+        let inital_test_string = test_file
+            .and_then(|path| fs::read_to_string(path).ok())
+            .unwrap_or_default();
+
         let mut sample_textarea = TextArea::default();
+        sample_textarea.insert_str(inital_test_string);
         sample_textarea.set_cursor_line_style(Style::new());
 
         App {
