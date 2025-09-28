@@ -13,7 +13,11 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Padding, Paragraph},
 };
 use regex::Regex;
-use std::{fs, io::{self, Stdout}, path::PathBuf};
+use std::{
+    fs,
+    io::{self, Stdout},
+    path::PathBuf,
+};
 use tui_textarea::{Input, TextArea};
 
 use crate::tool::Tool;
@@ -23,7 +27,7 @@ use crate::tool::Tool;
 pub struct RegexTool {
     /// The file to load the contents of test string from.
     #[arg(short, long)]
-    test: Option<PathBuf>
+    test: Option<PathBuf>,
 }
 
 impl Tool for RegexTool {
@@ -314,13 +318,9 @@ fn draw_body(f: &mut ratatui::Frame, app: &mut App, areas: (Rect, Rect, Rect, Re
         .clone()
         .border_style(Style::new().fg(Color::Blue));
 
-    let textarea_error = textarea_active
-        .clone()
-        .fg(Color::Red);
+    let textarea_error = textarea_active.clone().fg(Color::Red);
 
-    let cursor_active = Style::new()
-        .bg(Color::White)
-        .fg(Color::Black);
+    let cursor_active = Style::new().bg(Color::White).fg(Color::Black);
 
     let mut regex_label = Paragraph::new("Regex");
     if matches!(app.input_focus, InputFocus::Regex) {
