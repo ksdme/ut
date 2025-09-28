@@ -270,6 +270,7 @@ out = []
 for group, items in characters.items():
     letters = []
     for (name, letter) in items:
+        name = name.title()
         letters.append(f"(\"{name}\", \"{letter}\")")
 
     letters = ",\n".join(letters)

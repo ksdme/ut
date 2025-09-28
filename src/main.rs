@@ -67,7 +67,8 @@ fn main() -> anyhow::Result<()> {
         (tools::serve::ServeTool, "serve",),
         (tools::token::TokenTool, "token",),
         (tools::url::UrlTool, "url",),
-        (tools::uuid::UUIDTool, "uuid",)
+        (tools::uuid::UUIDTool, "uuid",),
+        (tools::unicode::UnicodeTool, "unicode",)
     )
     .context("Could not run tool")?;
 

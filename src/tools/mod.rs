@@ -10,5 +10,6 @@ pub mod random;
 pub mod regex;
 pub mod serve;
 pub mod token;
+pub mod unicode;
 pub mod url;
 pub mod uuid;

@@ -1,1 +1,1 @@
-mod unicode;
+pub mod unicode;
