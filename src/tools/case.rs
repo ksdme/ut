@@ -2,7 +2,7 @@ use crate::tool::{Output, Tool};
 use clap::{Command, CommandFactory, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
-#[command(name = "case")]
+#[command(name = "case", about = "Convert text between different case formats")]
 pub struct CaseTool {
     #[command(subcommand)]
     command: CaseCommand,
@@ -11,21 +11,45 @@ pub struct CaseTool {
 #[derive(Subcommand, Debug)]
 enum CaseCommand {
     /// Convert text to lowercase
-    Lower { text: String },
+    Lower {
+        /// Text to convert
+        text: String,
+    },
     /// Convert text to UPPERCASE
-    Upper { text: String },
+    Upper {
+        /// Text to convert
+        text: String,
+    },
     /// Convert text to camelCase
-    Camel { text: String },
+    Camel {
+        /// Text to convert
+        text: String,
+    },
     /// Convert text to Title Case
-    Title { text: String },
+    Title {
+        /// Text to convert
+        text: String,
+    },
     /// Convert text to CONSTANT_CASE
-    Constant { text: String },
+    Constant {
+        /// Text to convert
+        text: String,
+    },
     /// Convert text to Header-Case
-    Header { text: String },
+    Header {
+        /// Text to convert
+        text: String,
+    },
     /// Convert text to sentence case
-    Sentence { text: String },
+    Sentence {
+        /// Text to convert
+        text: String,
+    },
     /// Convert text to snake_case
-    Snake { text: String },
+    Snake {
+        /// Text to convert
+        text: String,
+    },
 }
 
 impl Tool for CaseTool {

@@ -4,16 +4,19 @@ use clap::{Command, CommandFactory, Parser};
 use colored::Colorize;
 use similar::{ChangeTag, TextDiff};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
-#[command(name = "diff")]
+#[command(
+    name = "diff",
+    about = "Compare text contents"
+)]
 pub struct DiffTool {
-    /// First version of the file (if omitted, opens editor for contents)
-    a: Option<String>,
+    /// First version of the file, omit to use editor
+    a: Option<PathBuf>,
 
-    /// Second version of the file (if omitted, opens editor for contents)
-    b: Option<String>,
+    /// Second version of the file, omit to use editor
+    b: Option<PathBuf>,
 }
 
 impl Tool for DiffTool {
@@ -153,7 +156,7 @@ impl Tool for DiffTool {
     }
 }
 
-fn get_content(arg: &str) -> Result<String> {
+fn get_content(arg: &PathBuf) -> Result<String> {
     fs::read_to_string(Path::new(arg)).context("Could not read file")
 }
 

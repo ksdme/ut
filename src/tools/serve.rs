@@ -18,7 +18,7 @@ use std::{
 use tracing_subscriber;
 
 #[derive(Parser, Debug)]
-#[command(name = "serve")]
+#[command(name = "serve", about = "Start a local HTTP file server")]
 pub struct ServeTool {
     /// Path to the directory to serve
     #[arg(short, long, default_value = ".")]

@@ -3,7 +3,7 @@ use anyhow::Context;
 use clap::{Command, CommandFactory, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
-#[command(name = "url")]
+#[command(name = "url", about = "URL encode and decode utilities")]
 pub struct UrlTool {
     #[command(subcommand)]
     command: UrlCommand,
@@ -11,10 +11,16 @@ pub struct UrlTool {
 
 #[derive(Subcommand, Debug)]
 enum UrlCommand {
-    /// url encode text
-    Encode { text: String },
-    /// url decode text
-    Decode { text: String },
+    /// URL encode text
+    Encode {
+        /// Text to URL encode
+        text: String,
+    },
+    /// URL decode text
+    Decode {
+        /// Text to URL decode
+        text: String,
+    },
 }
 
 impl Tool for UrlTool {

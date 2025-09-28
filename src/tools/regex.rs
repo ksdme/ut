@@ -23,9 +23,9 @@ use tui_textarea::{Input, TextArea};
 use crate::tool::Tool;
 
 #[derive(Parser, Debug)]
-#[command(name = "regex")]
+#[command(name = "regex", about = "Interactive regex tester")]
 pub struct RegexTool {
-    /// The file to load the contents of test string from.
+    /// File to load test string content from
     #[arg(short, long)]
     test: Option<PathBuf>,
 }

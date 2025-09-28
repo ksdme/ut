@@ -6,7 +6,10 @@ use rand::{Rng, rngs::OsRng};
 use rust_decimal::{Decimal, dec};
 
 #[derive(Parser, Debug)]
-#[command(name = "random")]
+#[command(
+    name = "random",
+    about = "Generate random numbers within specified range"
+)]
 pub struct RandomTool {
     /// Number of random numbers to generate
     #[arg(short = 'c', long = "count", default_value = "1")]

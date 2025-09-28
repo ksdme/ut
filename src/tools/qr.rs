@@ -5,7 +5,7 @@ use qrcode::QrCode;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
-#[command(name = "qr")]
+#[command(name = "qr", about = "Generate QR codes")]
 pub struct QRTool {
     /// The text or URL to encode as QR code
     text: String,

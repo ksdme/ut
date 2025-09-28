@@ -3,7 +3,7 @@ use clap::{Command, CommandFactory, Parser};
 use rand::{Rng, rngs::OsRng};
 
 #[derive(Parser, Debug)]
-#[command(name = "lorem")]
+#[command(name = "lorem", about = "Generate lorem ipsum text")]
 pub struct LoremTool {
     /// Number of paragraphs to generate
     #[arg(short = 'p', long = "paragraphs", default_value = "3")]

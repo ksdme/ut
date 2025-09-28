@@ -3,7 +3,7 @@ use clap::{Command, CommandFactory, Parser, Subcommand, ValueEnum};
 use uuid::Uuid;
 
 #[derive(Parser, Debug)]
-#[command(name = "uuid")]
+#[command(name = "uuid", about = "Generate UUIDs")]
 pub struct UUIDTool {
     #[command(subcommand)]
     command: UUIDCommand,

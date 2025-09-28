@@ -5,7 +5,7 @@ use crate::{
 use clap::{Command, CommandFactory, Parser};
 
 #[derive(Parser, Debug)]
-#[command(name = "unicode")]
+#[command(name = "unicode", about = "Unicode symbol reference")]
 pub struct UnicodeTool {}
 
 impl Tool for UnicodeTool {

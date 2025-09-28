@@ -7,7 +7,7 @@ use base64::{Engine as _, engine::general_purpose};
 use clap::{Command, CommandFactory, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
-#[command(name = "base64")]
+#[command(name = "base64", about = "Base64 encode and decode utilities")]
 pub struct Base64Tool {
     #[command(subcommand)]
     command: Base64Command,

@@ -3,9 +3,12 @@ use anyhow::Context;
 use clap::{Command, CommandFactory, Parser};
 
 #[derive(Parser, Debug)]
-#[command(name = "http-status")]
+#[command(
+    name = "http-status",
+    about = "HTTP status codes and their descriptions"
+)]
 pub struct HttpStatusTool {
-    /// Optional, status code to lookup
+    /// HTTP status code to lookup (omit to list all)
     code: Option<u16>,
 }
 

@@ -5,7 +5,7 @@ use csscolorparser::Color;
 use serde_json::json;
 
 #[derive(Parser, Debug)]
-#[command(name = "color")]
+#[command(name = "color", about = "Convert colors between different formats")]
 pub struct ColorConvertTool {
     /// Color value in any supported format (hex, rgb, rgba, hsl, hwb, cmyk, lch, oklch)
     color: String,
