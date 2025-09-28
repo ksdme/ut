@@ -306,7 +306,7 @@ fn draw_body(f: &mut ratatui::Frame, app: &mut App, areas: (Rect, Rect, Rect, Re
         .clone()
         .fg(Color::Red);
 
-    let cursor_active = Style::default()
+    let cursor_active = Style::new()
         .bg(Color::White)
         .fg(Color::Black);
 
