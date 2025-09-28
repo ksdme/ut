@@ -127,15 +127,15 @@ impl<'a> App<'a> {
         };
 
         let highlight_styles = &[
+            Style::new().bg(Color::LightBlue).fg(Color::Black),
+            Style::new().bg(Color::LightGreen).fg(Color::Black),
+            Style::new().bg(Color::LightRed).fg(Color::Black),
+            Style::new().bg(Color::LightYellow).fg(Color::Black),
             Style::new().bg(Color::Blue).fg(Color::Black),
             Style::new().bg(Color::Green).fg(Color::Black),
             Style::new().bg(Color::Red).fg(Color::White),
             Style::new().bg(Color::Yellow).fg(Color::Black),
             Style::new().bg(Color::Magenta).fg(Color::White),
-            Style::new().bg(Color::LightBlue).fg(Color::Black),
-            Style::new().bg(Color::LightGreen).fg(Color::Black),
-            Style::new().bg(Color::LightRed).fg(Color::Black),
-            Style::new().bg(Color::LightYellow).fg(Color::Black),
         ];
 
         let mut highlights: Vec<(usize, usize, Style)> = vec![];
@@ -231,6 +231,12 @@ fn run_app_loop(
                         InputFocus::Regex => InputFocus::Sample,
                         InputFocus::Sample => InputFocus::Regex,
                     };
+                    continue;
+                }
+
+                // Escape will focus the Regex field back again.
+                if matches!(key.code, KeyCode::Esc) {
+                    app.input_focus = InputFocus::Regex;
                     continue;
                 }
 
