@@ -302,15 +302,31 @@ fn draw_body(f: &mut ratatui::Frame, app: &mut App, areas: (Rect, Rect, Rect, Re
         .clone()
         .border_style(Style::new().fg(Color::Blue));
 
-    let cursor_active = Style::default().bg(Color::White).fg(Color::Black);
+    let textarea_error = textarea_active
+        .clone()
+        .fg(Color::Red);
+
+    let cursor_active = Style::default()
+        .bg(Color::White)
+        .fg(Color::Black);
 
     let mut regex_label = Paragraph::new("Regex");
     if matches!(app.input_focus, InputFocus::Regex) {
-        app.regex_textarea.set_block(textarea_active.clone());
+        app.regex_textarea.set_block(
+            match app.regex_error {
+                Some(_) => textarea_error,
+                None => textarea_active.clone(),
+            },
+        );
         app.regex_textarea.set_cursor_style(cursor_active);
     } else {
         regex_label = regex_label.fg(Color::DarkGray);
-        app.regex_textarea.set_block(textarea_base.clone());
+        app.regex_textarea.set_block(
+            match app.regex_error {
+                Some(_) => textarea_error,
+                None => textarea_base.clone(),
+            }
+        );
         app.regex_textarea.set_cursor_style(Style::new().hidden());
     }
 
