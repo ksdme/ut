@@ -193,10 +193,7 @@ impl<'a> App<'a> {
                     }
 
                     if !fragment.is_empty() {
-                        current_line.push_span(Span::styled(
-                            fragment.to_string(),
-                            style.clone(),
-                        ));
+                        current_line.push_span(Span::styled(fragment.to_string(), style.clone()));
                     }
                 }
             }
@@ -318,21 +315,17 @@ fn draw_body(f: &mut ratatui::Frame, app: &mut App, areas: (Rect, Rect, Rect, Re
 
     let mut regex_label = Paragraph::new("Regex");
     if matches!(app.input_focus, InputFocus::Regex) {
-        app.regex_textarea.set_block(
-            match app.regex_error {
-                Some(_) => textarea_error,
-                None => textarea_active.clone(),
-            },
-        );
+        app.regex_textarea.set_block(match app.regex_error {
+            Some(_) => textarea_error,
+            None => textarea_active.clone(),
+        });
         app.regex_textarea.set_cursor_style(cursor_active);
     } else {
         regex_label = regex_label.fg(Color::DarkGray);
-        app.regex_textarea.set_block(
-            match app.regex_error {
-                Some(_) => textarea_error,
-                None => textarea_base.clone(),
-            }
-        );
+        app.regex_textarea.set_block(match app.regex_error {
+            Some(_) => textarea_error,
+            None => textarea_base.clone(),
+        });
         app.regex_textarea.set_cursor_style(Style::new().hidden());
     }
 
