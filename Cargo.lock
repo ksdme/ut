@@ -2749,6 +2749,7 @@ dependencies = [
  "html-escape",
  "image",
  "md-5",
+ "nom",
  "normalize-path",
  "num-traits",
  "qrcode",

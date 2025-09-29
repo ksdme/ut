@@ -55,6 +55,7 @@ fn main() -> anyhow::Result<()> {
     let output = toolbox!(
         cli,
         (tools::base64::Base64Tool, "base64",),
+        (tools::calc::CalcTool, "calc",),
         (tools::case::CaseTool, "case",),
         (tools::color::ColorConvertTool, "color-convert",),
         (tools::diff::DiffTool, "diff",),
