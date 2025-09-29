@@ -7,10 +7,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
-#[command(
-    name = "diff",
-    about = "Compare text contents"
-)]
+#[command(name = "diff", about = "Compare text contents")]
 pub struct DiffTool {
     /// First version of the file, omit to use editor
     a: Option<PathBuf>,
