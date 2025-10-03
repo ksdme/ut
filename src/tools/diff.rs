@@ -10,9 +10,11 @@ use std::path::{Path, PathBuf};
 #[command(name = "diff", about = "Compare text contents")]
 pub struct DiffTool {
     /// First version of the file, omit to use editor
+    #[arg(short, long)]
     a: Option<PathBuf>,
 
     /// Second version of the file, omit to use editor
+    #[arg(short, long)]
     b: Option<PathBuf>,
 }
 
