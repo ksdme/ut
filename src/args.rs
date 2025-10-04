@@ -4,9 +4,9 @@ use std::str::FromStr;
 /// A type for clap argument parsing that supports reading from stdin
 /// when the value is "-" and allows escaping "-" with "\-".
 #[derive(Debug, Clone)]
-pub struct Input(pub String);
+pub struct StringInput(pub String);
 
-impl FromStr for Input {
+impl FromStr for StringInput {
     type Err = std::io::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -14,24 +14,24 @@ impl FromStr for Input {
             // Read from stdin
             let mut buffer = String::new();
             io::stdin().read_to_string(&mut buffer)?;
-            Ok(Input(buffer))
+            Ok(StringInput(buffer))
         } else if s == r"\-" {
             // Escaped dash becomes literal dash
-            Ok(Input("-".to_string()))
+            Ok(StringInput("-".to_string()))
         } else {
             // Regular string
-            Ok(Input(s.to_string()))
+            Ok(StringInput(s.to_string()))
         }
     }
 }
 
-impl AsRef<str> for Input {
+impl AsRef<str> for StringInput {
     fn as_ref(&self) -> &str {
         &self.0
     }
 }
 
-impl std::fmt::Display for Input {
+impl std::fmt::Display for StringInput {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }

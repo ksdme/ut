@@ -1,5 +1,5 @@
 use crate::{
-    args::Input,
+    args::StringInput,
     tool::{Output, Tool},
 };
 use anyhow::Context;
@@ -18,7 +18,7 @@ enum Base64Command {
     /// Base64 encode contents
     Encode {
         /// Input to encode (use "-" for stdin)
-        text: Input,
+        text: StringInput,
         /// Encode with urlsafe character set
         #[arg(long)]
         urlsafe: bool,
@@ -26,7 +26,7 @@ enum Base64Command {
     /// Base64 decode contents
     Decode {
         /// Input to decode (use "-" for stdin)
-        text: Input,
+        text: StringInput,
         /// Decode with urlsafe character set
         #[arg(long)]
         urlsafe: bool,
