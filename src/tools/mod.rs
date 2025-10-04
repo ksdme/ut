@@ -6,6 +6,7 @@ pub mod diff;
 pub mod hash;
 pub mod http;
 pub mod lorem;
+pub mod pp;
 pub mod qr;
 pub mod random;
 pub mod regex;

@@ -1,5 +1,5 @@
 use crate::tool::{Output, Tool};
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use clap::{Command, CommandFactory, Parser};
 use nom::{
     IResult,
