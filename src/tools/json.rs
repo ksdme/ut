@@ -1,14 +1,14 @@
 use clap::{Command, CommandFactory, Parser, Subcommand};
 use nom::{
+    IResult,
     branch::alt,
     bytes::complete::{tag, take_until, take_while1},
     character::complete::{char, digit1},
     combinator::{map, opt, recognize},
     multi::many0,
     sequence::{delimited, preceded, tuple},
-    IResult,
 };
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::tool::{Output, Tool};
 
@@ -121,7 +121,7 @@ fn json_value(input: &str) -> IResult<&str, Value> {
         quoted_string,
         boolean,
         null,
-        float,   // Try float before integer (more specific)
+        float, // Try float before integer (more specific)
         integer,
         unquoted_string, // Fallback to string
     ))(input)
