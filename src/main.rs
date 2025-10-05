@@ -6,6 +6,11 @@ mod tools;
 use std::io::{self, Write};
 
 use clap::FromArgMatches;
+use serde_json::Value;
+use tabled::{
+    Table, Tabled,
+    settings::{Padding, Remove, Style, object::Rows},
+};
 
 use crate::tool::{Output, Tool};
 use anyhow::{Context, anyhow};
@@ -83,10 +88,7 @@ fn main() -> anyhow::Result<()> {
                 .context("Could not write bytes to stdout")?;
         }
         Some(Output::JsonValue(value)) => {
-            print!(
-                "{}",
-                serde_json::to_string_pretty(&value).context("Could not serialize result")?
-            );
+            print_json_value(&value)?;
         }
         Some(Output::Text(text)) => {
             println!("{}", text);
@@ -95,4 +97,60 @@ fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+fn print_json_value(value: &Value) -> anyhow::Result<()> {
+    match value {
+        // Object - print as table
+        Value::Object(obj) => {
+            if obj.is_empty() {
+                println!("{{}}");
+                return Ok(());
+            }
+
+            #[derive(Tabled)]
+            struct KeyValue {
+                key: String,
+                value: String,
+            }
+
+            let rows: Vec<KeyValue> = obj
+                .iter()
+                .map(|(k, v)| KeyValue {
+                    key: k.clone(),
+                    value: value_to_string(v),
+                })
+                .collect();
+
+            let mut table = Table::new(rows);
+            table
+                .with(Style::empty())
+                .with(Remove::row(Rows::first()))
+                .with(Padding::new(0, 1, 0, 0));
+
+            println!("{}", table);
+        }
+
+        // Arrays.
+        Value::Array(arr) => {
+            for elem in arr {
+                print_json_value(elem)?;
+            }
+        }
+
+        // Scalar values - reuse value_to_string
+        _ => println!("{}", value_to_string(value)),
+    }
+
+    Ok(())
+}
+
+fn value_to_string(value: &Value) -> String {
+    match value {
+        Value::Null => "null".to_string(),
+        Value::Bool(b) => b.to_string(),
+        Value::Number(n) => n.to_string(),
+        Value::String(s) => s.clone(),
+        _ => serde_json::to_string(value).unwrap_or_default(),
+    }
 }
