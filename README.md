@@ -1,4 +1,4 @@
-# ut
+# `ut` - utility toolkit
 
 A fast, lightweight CLI utility toolkit for developers and IT professionals. `ut` provides a comprehensive set of commonly-used tools in a single binary, eliminating the need to install and remember multiple utilities or search for random websites to perform simple tasks.
 
