@@ -70,6 +70,12 @@ enum UUIDCommand {
         #[arg(short = 'c', long = "count", default_value = "1")]
         quantity: usize,
     },
+    /// Generate UUID v7 (timestamp-based, sortable)
+    V7 {
+        /// Number of UUIDs to generate
+        #[arg(short = 'c', long = "count", default_value = "1")]
+        quantity: usize,
+    },
 }
 
 impl Tool for UUIDTool {
@@ -106,6 +112,9 @@ impl Tool for UUIDTool {
                 (0..*quantity)
                     .map(|_| Uuid::new_v5(&ns_uuid, name.as_bytes()).to_string())
                     .collect()
+            }
+            UUIDCommand::V7 { quantity } => {
+                (0..*quantity).map(|_| Uuid::now_v7().to_string()).collect()
             }
         };
 
