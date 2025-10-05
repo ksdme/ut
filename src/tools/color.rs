@@ -25,43 +25,16 @@ impl Tool for ColorConvertTool {
         let [r, g, b, _] = color.to_rgba8();
         let [_, _, _, a_f] = color.to_array();
 
-        Ok(Some(Output::JsonValue(json!([
-            {
-                "format": "rgb",
-                "value": color.to_css_rgb()
-            },
-            {
-                "format": "rgba",
-                "value": format!("rgba({}, {}, {}, {:.3})", r, g, b, a_f)
-            },
-            {
-                "format": "hex",
-                "value": color.to_css_hex(),
-            },
-            {
-                "format": "hsl",
-                "value": color.to_css_hsl(),
-            },
-            {
-                "format": "hwb",
-                "value": color.to_css_hwb(),
-            },
-            {
-                "format": "lab",
-                "value": color.to_css_lab(),
-            },
-            {
-                "format": "lch",
-                "value": color.to_css_lch(),
-            },
-            {
-                "format": "oklab",
-                "value": color.to_css_oklab(),
-            },
-            {
-                "format": "oklch",
-                "value": color.to_css_oklch(),
-            },
-        ]))))
+        Ok(Some(Output::JsonValue(json!({
+            "rgb": color.to_css_rgb(),
+            "rgba": format!("rgba({}, {}, {}, {:.3})", r, g, b, a_f),
+            "hex": color.to_css_hex(),
+            "hsl": color.to_css_hsl(),
+            "hwb": color.to_css_hwb(),
+            "lab": color.to_css_lab(),
+            "lch": color.to_css_lch(),
+            "oklab": color.to_css_oklab(),
+            "oklch": color.to_css_oklch(),
+        }))))
     }
 }
