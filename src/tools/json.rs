@@ -23,7 +23,7 @@ pub struct JsonTool {
 enum JsonCommand {
     /// Build JSON from key-value pairs with dot notation and array support
     Builder {
-        /// Key-value pairs in the format key=value (e.g., a.b.c=hello, "a.b.[].c"=1)
+        /// Key-value pairs in the format key=value (e.g., a.b.c=hello, "a.b[].c"=1 or "a.b[2].c"=false)
         #[arg(required = true)]
         inputs: Vec<String>,
     },
@@ -180,11 +180,16 @@ fn unquoted_string(input: &str) -> IResult<&str, Value> {
 
 // Parse a complete path into PathPart components
 // Examples: "a.b.c" → [Key("a"), Key("b"), Key("c")]
-//           "a.[0].b" → [Key("a"), ArrayIndex(0), Key("b")]
-//           "a.[].b" → [Key("a"), ArrayAppend, Key("b")]
+//           "a[0].b" → [Key("a"), ArrayIndex(0), Key("b")]
+//           "a[].b" → [Key("a"), ArrayAppend, Key("b")]
 fn path_parser(input: &str) -> IResult<&str, Vec<PathPart>> {
     let (input, first) = path_part(input)?;
-    let (input, rest) = many0(preceded(opt(char('.')), path_part))(input)?;
+    let (input, rest) = many0(alt((
+        // Array access without dot: [0] or []
+        alt((array_append, array_index)),
+        // Key access with dot: .key
+        preceded(char('.'), path_part),
+    )))(input)?;
 
     let mut parts = vec![first];
     parts.extend(rest);
@@ -192,9 +197,10 @@ fn path_parser(input: &str) -> IResult<&str, Vec<PathPart>> {
     Ok((input, parts))
 }
 
-// Parse a single path part (key, array index, or array append)
+// Parse a single path part (just a key)
+// Array access is handled separately in path_parser
 fn path_part(input: &str) -> IResult<&str, PathPart> {
-    alt((array_append, array_index, map(key, PathPart::Key)))(input)
+    map(key, PathPart::Key)(input)
 }
 
 // Parse array append notation []
@@ -215,9 +221,12 @@ fn key(input: &str) -> IResult<&str, String> {
 }
 
 // Parse an unquoted key in a path (alphanumeric, underscore, hyphen, spaces)
+// Stops at '[' or '.' to allow array access without dots
 fn unquoted_key(input: &str) -> IResult<&str, String> {
     map(
-        take_while1(|c: char| c.is_alphanumeric() || c == '_' || c == '-' || c == ' '),
+        take_while1(|c: char| {
+            (c.is_alphanumeric() || c == '_' || c == '-' || c == ' ') && c != '[' && c != '.'
+        }),
         |s: &str| s.to_string(),
     )(input)
 }
@@ -338,10 +347,10 @@ mod tests {
         let (_, parts) = path_parser("a.b.c").unwrap();
         assert_eq!(parts.len(), 3);
 
-        let (_, parts) = path_parser("a.[0].b").unwrap();
+        let (_, parts) = path_parser("a[0].b").unwrap();
         assert_eq!(parts.len(), 3);
 
-        let (_, parts) = path_parser("a.[].b").unwrap();
+        let (_, parts) = path_parser("a[].b").unwrap();
         assert_eq!(parts.len(), 3);
     }
 
@@ -379,7 +388,7 @@ mod tests {
     fn test_array_append() {
         let tool = JsonTool {
             command: JsonCommand::Builder {
-                inputs: vec!["a.b.[].c=1".to_string(), "a.b.[].c=2".to_string()],
+                inputs: vec!["a.b[].c=1".to_string(), "a.b[].c=2".to_string()],
             },
         };
         let result = tool.execute().unwrap().unwrap();
@@ -395,7 +404,7 @@ mod tests {
     fn test_array_index() {
         let tool = JsonTool {
             command: JsonCommand::Builder {
-                inputs: vec!["a.b.[3].c=hello".to_string()],
+                inputs: vec!["a.b[3].c=hello".to_string()],
             },
         };
         let result = tool.execute().unwrap().unwrap();
