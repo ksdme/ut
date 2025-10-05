@@ -66,7 +66,8 @@ Run `ut --help` to see all available tools, or `ut <TOOL> --help` for specific t
 │   ├── serve       - Local HTTP file server
 │   └── qr          - Generate QR codes
 ├── Color & Design
-│   └── color       - Convert color formats
+│   └── color       - Color utilities
+│       └── convert
 └── Reference
     └── unicode     - Unicode symbol reference
 ```
@@ -261,14 +262,14 @@ ut qr "Hello World" --output qrcode.png
 ### Color & Design
 
 #### `color`
-Convert colors between different formats.
+Color utilities for working with different color formats.
 - Supports hex, rgb, rgba, hsl, hwb, lab, lch, oklab, oklch
 - Parses any CSS-compatible color format
 
 ```bash
-ut color "#FF5733"
-ut color "rgb(255, 87, 51)"
-ut color "hsl(9, 100%, 60%)"
+ut color convert "#FF5733"
+ut color convert "rgb(255, 87, 51)"
+ut color convert "hsl(9, 100%, 60%)"
 ```
 
 ### Reference

@@ -62,7 +62,7 @@ fn main() -> anyhow::Result<()> {
         (tools::base64::Base64Tool, "base64",),
         (tools::calc::CalcTool, "calc",),
         (tools::case::CaseTool, "case",),
-        (tools::color::ColorConvertTool, "color-convert",),
+        (tools::color::ColorTool, "color",),
         (tools::datetime::DateTimeTool, "datetime",),
         (tools::diff::DiffTool, "diff",),
         (tools::hash::HashTool, "hash",),
