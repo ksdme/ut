@@ -7,7 +7,7 @@ use nom::{
     IResult,
     branch::alt,
     bytes::complete::{tag, take_while_m_n, take_while1},
-    character::complete::{char, space0, space1},
+    character::complete::{char, space1},
     combinator::{map, map_res},
     sequence::tuple,
 };
@@ -29,30 +29,33 @@ pub struct DateTimeTool {
     #[arg(short = 't', long = "target-timezone")]
     target_timezone: Option<String>,
 
-    /// Input format string using custom specifiers for parsing
-    ///
-    /// Available format specifiers:
-    /// - Year4: 4-digit year (e.g., 2025)
-    /// - Year2: 2-digit year (e.g., 25, interpreted as 2025)
-    /// - MonthName: Full month name (e.g., January, December)
-    /// - MonthName3: 3-letter month abbreviation (e.g., Jan, Dec)
-    /// - MonthNum2: 2-digit month (e.g., 01, 12)
-    /// - MonthNum: 1-2 digit month (e.g., 1, 12)
-    /// - Day2: 2-digit day (e.g., 01, 31)
-    /// - Day: 1-2 digit day (e.g., 1, 31)
-    /// - WeekdayName: Full weekday name (skipped, e.g., Monday)
-    /// - WeekdayName3: 3-letter weekday abbreviation (skipped, e.g., Mon)
-    /// - Hour24: 2-digit hour in 24-hour format (e.g., 00, 23)
-    /// - Hour12: 2-digit hour in 12-hour format (e.g., 01, 12)
-    /// - Minute2: 2-digit minute (e.g., 00, 59)
-    /// - Minute: 1-2 digit minute (e.g., 0, 59)
-    /// - Second: 2-digit second (e.g., 00, 59)
-    /// - AMPM: AM/PM indicator
-    /// - TZ: Timezone offset (e.g., +05:30, -08:00)
-    /// - TZName: Timezone name (skipped, e.g., UTC, EST)
-    ///
-    /// Example: "MonthName Day2, Year4 Hour12:Minute2 AMPM"
-    #[arg(long = "parse-format")]
+    #[arg(
+        short = 'f',
+        long = "parse-format",
+        long_help = "Input format string using custom specifiers for parsing
+
+Available format specifiers:
+- Year4: 4-digit year (e.g., 2025)
+- Year2: 2-digit year (e.g., 25, interpreted as 2025)
+- MonthName: Full month name (e.g., January, December)
+- MonthName3: 3-letter month abbreviation (e.g., Jan, Dec)
+- MonthNum2: 2-digit month (e.g., 01, 12)
+- MonthNum: 1-2 digit month (e.g., 1, 12)
+- Date2: 2-digit day (e.g., 01, 31)
+- Date: 1-2 digit day (e.g., 1, 31)
+- WeekdayName: Full weekday name (skipped, e.g., Monday)
+- WeekdayName3: 3-letter weekday abbreviation (skipped, e.g., Mon)
+- Hour24: 2-digit hour in 24-hour format (e.g., 00, 23)
+- Hour12: 2-digit hour in 12-hour format (e.g., 01, 12)
+- Minute2: 2-digit minute (e.g., 00, 59)
+- Minute: 1-2 digit minute (e.g., 0, 59)
+- Second: 2-digit second (e.g., 00, 59)
+- AMPM: AM/PM indicator
+- TZ: Timezone offset (e.g., +05:30, -08:00)
+- TZName: Timezone name (skipped, e.g., UTC, EST)
+
+Example: \"MonthName Date2, Year4 Hour12:Minute2 AMPM\""
+    )]
     parse_format: Option<String>,
 }
 
@@ -249,16 +252,14 @@ fn parse_with_format<'a>(
             let (rest_input, _) = skip_weekday_full(remaining)?;
             remaining = rest_input;
             format_str = rest;
-        } else if let Some(rest) = format_str.strip_prefix("Day2") {
+        } else if let Some(rest) = format_str.strip_prefix("Date2") {
             let (rest_input, day) = parse_day2(remaining)?;
             parsed.day = Some(day);
             remaining = rest_input;
             format_str = rest;
-        } else if let Some(rest) = format_str.strip_prefix("Day") {
+        } else if let Some(rest) = format_str.strip_prefix("Date") {
             let (rest_input, day) = parse_day(remaining)?;
             parsed.day = Some(day);
-            // Consume optional trailing whitespace after Day
-            let (rest_input, _) = space0::<_, ()>(rest_input)?;
             remaining = rest_input;
             format_str = rest;
         } else if let Some(rest) = format_str.strip_prefix("Hour24") {
@@ -627,7 +628,7 @@ mod tests {
             datetime: "04/10/2025 15:30".to_string(),
             source_timezone: Some("UTC".to_string()),
             target_timezone: None,
-            parse_format: Some("Day2/MonthNum2/Year4 Hour24:Minute2".to_string()),
+            parse_format: Some("Date2/MonthNum2/Year4 Hour24:Minute2".to_string()),
         };
 
         let result = tool.execute().unwrap();
@@ -642,7 +643,7 @@ mod tests {
             datetime: "October 04, 2025 03:30 PM".to_string(),
             source_timezone: Some("UTC".to_string()),
             target_timezone: None,
-            parse_format: Some("MonthName Day2, Year4 Hour12:Minute2 AMPM".to_string()),
+            parse_format: Some("MonthName Date2, Year4 Hour12:Minute2 AMPM".to_string()),
         };
 
         let result = tool.execute().unwrap();
@@ -657,7 +658,7 @@ mod tests {
             datetime: "2025-10-04 15:30:00 +05:30".to_string(),
             source_timezone: None,
             target_timezone: Some("UTC".to_string()),
-            parse_format: Some("Year4-MonthNum2-Day2 Hour24:Minute2:Second TZ".to_string()),
+            parse_format: Some("Year4-MonthNum2-Date2 Hour24:Minute2:Second TZ".to_string()),
         };
 
         let result = tool.execute().unwrap();
