@@ -4,47 +4,58 @@ use clap::{Command, CommandFactory, Parser};
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "http-status",
+    name = "http",
     about = "HTTP status codes and their descriptions"
 )]
-pub struct HttpStatusTool {
-    /// HTTP status code to lookup (omit to list all)
-    code: Option<u16>,
+pub struct HttpTool {
+    #[command(subcommand)]
+    command: HttpCommand,
 }
 
-impl Tool for HttpStatusTool {
+#[derive(Parser, Debug)]
+pub enum HttpCommand {
+    /// Look up HTTP status codes
+    Status {
+        /// HTTP status code to lookup (omit to list all)
+        code: Option<u16>,
+    },
+}
+
+impl Tool for HttpTool {
     fn cli() -> Command {
-        HttpStatusTool::command()
+        HttpTool::command()
     }
 
     fn execute(&self) -> anyhow::Result<Option<Output>> {
-        let result = match self.code {
-            Some(code) => {
-                let (code, title, description) = CODES
-                    .iter()
-                    .find(|(candidate, _, _)| *candidate == code)
-                    .context("Unrecognized HTTP status code")?;
-
-                serde_json::json!({
-                    "code": code,
-                    "title": title,
-                    "description": description,
-                })
-            }
-            None => {
-                serde_json::json!(
-                    CODES
+        let result = match &self.command {
+            HttpCommand::Status { code } => match code {
+                Some(code) => {
+                    let (code, title, description) = CODES
                         .iter()
-                        .map(|(code, title, description)| {
-                            serde_json::json!({
-                                "code": code,
-                                "title": title,
-                                "description": description,
+                        .find(|(candidate, _, _)| *candidate == *code)
+                        .context("Unrecognized HTTP status code")?;
+
+                    serde_json::json!({
+                        "code": code,
+                        "title": title,
+                        "description": description,
+                    })
+                }
+                None => {
+                    serde_json::json!(
+                        CODES
+                            .iter()
+                            .map(|(code, title, description)| {
+                                serde_json::json!({
+                                    "code": code,
+                                    "title": title,
+                                    "description": description,
+                                })
                             })
-                        })
-                        .collect::<serde_json::Value>()
-                )
-            }
+                            .collect::<serde_json::Value>()
+                    )
+                }
+            },
         };
 
         Ok(Some(Output::JsonValue(result)))

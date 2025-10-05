@@ -62,7 +62,8 @@ Run `ut --help` to see all available tools, or `ut <TOOL> --help` for specific t
 │   ├── regex       - Interactive regex tester
 │   └── datetime    - Parse and convert datetimes
 ├── Web & Network
-│   ├── http-status - HTTP status code lookup
+│   ├── http        - HTTP utilities
+│   │   └── status
 │   ├── serve       - Local HTTP file server
 │   └── qr          - Generate QR codes
 ├── Color & Design
@@ -231,12 +232,12 @@ ut datetime "October 04, 2025 03:30 PM" --source-timezone UTC --parse-format "Mo
 
 ### Web & Network
 
-#### `http-status`
-Look up HTTP status codes and their descriptions.
+#### `http`
+HTTP utilities including status code lookup.
 
 ```bash
-ut http-status 404
-ut http-status  # List all status codes
+ut http status 404
+ut http status  # List all status codes
 ```
 
 #### `serve`
