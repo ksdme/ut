@@ -58,6 +58,7 @@ fn main() -> anyhow::Result<()> {
         (tools::calc::CalcTool, "calc",),
         (tools::case::CaseTool, "case",),
         (tools::color::ColorConvertTool, "color-convert",),
+        (tools::datetime::DateTimeTool, "datetime",),
         (tools::diff::DiffTool, "diff",),
         (tools::hash::HashTool, "hash",),
         (tools::http::HttpStatusTool, "http-status",),
