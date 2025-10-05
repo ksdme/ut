@@ -363,10 +363,11 @@ mod tests {
             },
         };
         let result = tool.execute().unwrap().unwrap();
-        if let Output::JsonValue(value) = result {
+        if let Output::Text(text) = result {
+            let value: Value = serde_json::from_str(&text).unwrap();
             assert_eq!(value["a"]["b"]["c"], "hello");
         } else {
-            panic!("Expected JsonValue output");
+            panic!("Expected Text output");
         }
     }
 
@@ -378,10 +379,11 @@ mod tests {
             },
         };
         let result = tool.execute().unwrap().unwrap();
-        if let Output::JsonValue(value) = result {
+        if let Output::Text(text) = result {
+            let value: Value = serde_json::from_str(&text).unwrap();
             assert_eq!(value["k"]["d"]["l"], true);
         } else {
-            panic!("Expected JsonValue output");
+            panic!("Expected Text output");
         }
     }
 
@@ -393,11 +395,12 @@ mod tests {
             },
         };
         let result = tool.execute().unwrap().unwrap();
-        if let Output::JsonValue(value) = result {
+        if let Output::Text(text) = result {
+            let value: Value = serde_json::from_str(&text).unwrap();
             assert_eq!(value["a"]["b"][0]["c"], 1);
             assert_eq!(value["a"]["b"][1]["c"], 2);
         } else {
-            panic!("Expected JsonValue output");
+            panic!("Expected Text output");
         }
     }
 
@@ -409,11 +412,12 @@ mod tests {
             },
         };
         let result = tool.execute().unwrap().unwrap();
-        if let Output::JsonValue(value) = result {
+        if let Output::Text(text) = result {
+            let value: Value = serde_json::from_str(&text).unwrap();
             assert_eq!(value["a"]["b"][3]["c"], "hello");
             assert_eq!(value["a"]["b"][0], Value::Null);
         } else {
-            panic!("Expected JsonValue output");
+            panic!("Expected Text output");
         }
     }
 
@@ -425,10 +429,11 @@ mod tests {
             },
         };
         let result = tool.execute().unwrap().unwrap();
-        if let Output::JsonValue(value) = result {
+        if let Output::Text(text) = result {
+            let value: Value = serde_json::from_str(&text).unwrap();
             assert_eq!(value["hello world"], "test");
         } else {
-            panic!("Expected JsonValue output");
+            panic!("Expected Text output");
         }
     }
 }
