@@ -101,7 +101,6 @@ fn main() -> anyhow::Result<()> {
 
 fn print_json_value(value: &Value) -> anyhow::Result<()> {
     match value {
-        // Object - print as table
         Value::Object(obj) => {
             if obj.is_empty() {
                 println!("{{}}");
@@ -131,14 +130,12 @@ fn print_json_value(value: &Value) -> anyhow::Result<()> {
             println!("{}", table);
         }
 
-        // Arrays.
         Value::Array(arr) => {
             for elem in arr {
                 print_json_value(elem)?;
             }
         }
 
-        // Scalar values - reuse value_to_string
         _ => println!("{}", value_to_string(value)),
     }
 
