@@ -26,10 +26,11 @@ impl Tool for PrettyPrintTool {
         };
 
         let result = input
+            .replace("\\\\", "\\")
+            .replace("\\n", "\n")
             .replace("\\n", "\n")
             .replace("\\t", "\t")
-            .replace("\\r", "\r")
-            .replace("\\\\", "\\");
+            .replace("\\r", "\r");
 
         Ok(Some(Output::Text(result)))
     }
