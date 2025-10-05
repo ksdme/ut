@@ -61,6 +61,7 @@ fn main() -> anyhow::Result<()> {
         (tools::diff::DiffTool, "diff",),
         (tools::hash::HashTool, "hash",),
         (tools::http::HttpStatusTool, "http-status",),
+        (tools::json::JsonTool, "json",),
         (tools::lorem::LoremTool, "lorem",),
         (tools::pp::PrettyPrintTool, "pretty-print", "pp"),
         (tools::qr::QRTool, "qr",),

@@ -1,39 +1,52 @@
-use clap::{Command, CommandFactory, Parser};
+use clap::{Command, CommandFactory, Parser, Subcommand};
 use nom::{
-    IResult,
     branch::alt,
     bytes::complete::{tag, take_until, take_while1},
     character::complete::{char, digit1},
     combinator::{map, opt, recognize},
     multi::many0,
     sequence::{delimited, preceded, tuple},
+    IResult,
 };
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 use crate::tool::{Output, Tool};
 
 #[derive(Parser, Debug)]
-#[command(about = "Build JSON from key-value pairs with dot notation and array support")]
-pub struct JsonBuilder {
-    /// Key-value pairs in the format key=value (e.g., a.b.c=hello, "a.b.[].c"=1)
-    #[arg(required = true)]
-    inputs: Vec<String>,
+#[command(name = "json", about = "JSON utilities")]
+pub struct JsonTool {
+    #[command(subcommand)]
+    command: JsonCommand,
 }
 
-impl Tool for JsonBuilder {
+#[derive(Subcommand, Debug)]
+enum JsonCommand {
+    /// Build JSON from key-value pairs with dot notation and array support
+    Builder {
+        /// Key-value pairs in the format key=value (e.g., a.b.c=hello, "a.b.[].c"=1)
+        #[arg(required = true)]
+        inputs: Vec<String>,
+    },
+}
+
+impl Tool for JsonTool {
     fn cli() -> Command {
-        JsonBuilder::command()
+        JsonTool::command()
     }
 
     fn execute(&self) -> anyhow::Result<Option<Output>> {
-        let mut root = json!({});
+        match &self.command {
+            JsonCommand::Builder { inputs } => {
+                let mut root = json!({});
 
-        for input in &self.inputs {
-            let (path_parts, value) = parse_input(input)?;
-            set_nested_value(&mut root, path_parts, value)?;
+                for input in inputs {
+                    let (path_parts, value) = parse_input(input)?;
+                    set_nested_value(&mut root, path_parts, value)?;
+                }
+
+                Ok(Some(Output::JsonValue(root)))
+            }
         }
-
-        Ok(Some(Output::JsonValue(root)))
     }
 }
 
@@ -334,10 +347,12 @@ mod tests {
 
     #[test]
     fn test_simple_nested() {
-        let builder = JsonBuilder {
-            inputs: vec!["a.b.c=hello".to_string()],
+        let tool = JsonTool {
+            command: JsonCommand::Builder {
+                inputs: vec!["a.b.c=hello".to_string()],
+            },
         };
-        let result = builder.execute().unwrap().unwrap();
+        let result = tool.execute().unwrap().unwrap();
         if let Output::JsonValue(value) = result {
             assert_eq!(value["a"]["b"]["c"], "hello");
         } else {
@@ -347,10 +362,12 @@ mod tests {
 
     #[test]
     fn test_boolean_value() {
-        let builder = JsonBuilder {
-            inputs: vec!["k.d.l=true".to_string()],
+        let tool = JsonTool {
+            command: JsonCommand::Builder {
+                inputs: vec!["k.d.l=true".to_string()],
+            },
         };
-        let result = builder.execute().unwrap().unwrap();
+        let result = tool.execute().unwrap().unwrap();
         if let Output::JsonValue(value) = result {
             assert_eq!(value["k"]["d"]["l"], true);
         } else {
@@ -360,10 +377,12 @@ mod tests {
 
     #[test]
     fn test_array_append() {
-        let builder = JsonBuilder {
-            inputs: vec!["a.b.[].c=1".to_string(), "a.b.[].c=2".to_string()],
+        let tool = JsonTool {
+            command: JsonCommand::Builder {
+                inputs: vec!["a.b.[].c=1".to_string(), "a.b.[].c=2".to_string()],
+            },
         };
-        let result = builder.execute().unwrap().unwrap();
+        let result = tool.execute().unwrap().unwrap();
         if let Output::JsonValue(value) = result {
             assert_eq!(value["a"]["b"][0]["c"], 1);
             assert_eq!(value["a"]["b"][1]["c"], 2);
@@ -374,10 +393,12 @@ mod tests {
 
     #[test]
     fn test_array_index() {
-        let builder = JsonBuilder {
-            inputs: vec!["a.b.[3].c=hello".to_string()],
+        let tool = JsonTool {
+            command: JsonCommand::Builder {
+                inputs: vec!["a.b.[3].c=hello".to_string()],
+            },
         };
-        let result = builder.execute().unwrap().unwrap();
+        let result = tool.execute().unwrap().unwrap();
         if let Output::JsonValue(value) = result {
             assert_eq!(value["a"]["b"][3]["c"], "hello");
             assert_eq!(value["a"]["b"][0], Value::Null);
@@ -388,10 +409,12 @@ mod tests {
 
     #[test]
     fn test_quoted_key() {
-        let builder = JsonBuilder {
-            inputs: vec![r#""hello world"=test"#.to_string()],
+        let tool = JsonTool {
+            command: JsonCommand::Builder {
+                inputs: vec![r#""hello world"=test"#.to_string()],
+            },
         };
-        let result = builder.execute().unwrap().unwrap();
+        let result = tool.execute().unwrap().unwrap();
         if let Output::JsonValue(value) = result {
             assert_eq!(value["hello world"], "test");
         } else {
