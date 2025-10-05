@@ -277,10 +277,9 @@ cargo fmt
 # Run tests
 cargo test
 ```
+## Built with Claude Code
 
-## License
-
-[Add your license here]
+Parts of this project were built using [Claude Code](https://claude.com/claude-code), an AI-powered coding assistant, with human oversight and collaboration.
 
 ## Contributing
 
