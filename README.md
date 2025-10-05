@@ -21,21 +21,44 @@ Run `ut --help` to see all available tools, or `ut <TOOL> --help` for specific t
 ```
 ├── Encoding
 │   ├── base64      - Base64 encode/decode
+│   │   ├── encode
+│   │   └── decode
 │   └── url         - URL encode/decode
+│       ├── encode
+│       └── decode
 ├── Hashing
-│   └── hash        - Cryptographic hash digests (MD5, SHA-1, SHA-256, etc.)
+│   └── hash        - Cryptographic hash digests
+│       ├── md5
+│       ├── sha1
+│       ├── sha224
+│       ├── sha256
+│       ├── sha384
+│       └── sha512
 ├── Data Generation
-│   ├── uuid        - Generate UUIDs (v1, v3, v4, v5)
+│   ├── uuid        - Generate UUIDs
+│   │   ├── v1
+│   │   ├── v3
+│   │   ├── v4
+│   │   └── v5
 │   ├── token       - Generate secure random tokens
 │   ├── lorem       - Generate lorem ipsum text
 │   └── random      - Generate random numbers
 ├── Text Processing
 │   ├── case        - Convert text case formats
+│   │   ├── lower
+│   │   ├── upper
+│   │   ├── camel
+│   │   ├── title
+│   │   ├── constant
+│   │   ├── header
+│   │   ├── sentence
+│   │   └── snake
 │   ├── pretty-print - Unescape newlines and tabs
 │   └── diff        - Compare text with visual output
 ├── Development Tools
 │   ├── calc        - Expression calculator
 │   ├── json        - JSON builder and utilities
+│   │   └── builder
 │   ├── regex       - Interactive regex tester
 │   └── datetime    - Parse and convert datetimes
 ├── Web & Network
