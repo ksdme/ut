@@ -39,7 +39,8 @@ Run `ut --help` to see all available tools, or `ut <TOOL> --help` for specific t
 │   │   ├── v1
 │   │   ├── v3
 │   │   ├── v4
-│   │   └── v5
+│   │   ├── v5
+│   │   └── v7
 │   ├── token       - Generate secure random tokens
 │   ├── lorem       - Generate lorem ipsum text
 │   └── random      - Generate random numbers
@@ -114,11 +115,14 @@ Generate UUIDs in various versions.
 - v3: Namespace + MD5 hash
 - v4: Random
 - v5: Namespace + SHA-1 hash
+- v7: Timestamp-based, sortable
 
 ```bash
 ut uuid v4
 ut uuid v4 --count 5
 ut uuid v5 --namespace DNS --name example.com
+ut uuid v7
+ut uuid v7 --count 5
 ```
 
 #### `token`
