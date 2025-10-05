@@ -74,7 +74,7 @@ fn main() -> anyhow::Result<()> {
         (tools::random::RandomTool, "random",),
         (tools::regex::RegexTool, "regex",),
         (tools::serve::ServeTool, "serve",),
-        (tools::token::TokenTool, "token",),
+        (tools::token::TokenTool, "token", "secret"),
         (tools::url::UrlTool, "url",),
         (tools::uuid::UUIDTool, "uuid",),
         (tools::unicode::UnicodeTool, "unicode",)
