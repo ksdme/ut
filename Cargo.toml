@@ -14,7 +14,7 @@ sha2 = "0.10"
 sha1 = "0.10"
 md-5 = "0.10"
 urlencoding = "2.1.3"
-uuid = { version = "1.11.0", features = ["v1", "v3", "v4", "v5"] }
+uuid = { version = "1.11.0", features = ["v1", "v3", "v4", "v5", "v7"] }
 rust_decimal = { version = "1.38.0", features = ["macros", "maths"] }
 nom = "7.1"
 num-traits = "0.2.19"
