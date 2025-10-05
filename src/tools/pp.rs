@@ -31,6 +31,6 @@ impl Tool for PrettyPrintTool {
             .replace("\\r", "\r")
             .replace("\\\\", "\\");
 
-        Ok(Some(Output::JsonValue(serde_json::json!(result))))
+        Ok(Some(Output::Text(result)))
     }
 }
