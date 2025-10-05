@@ -44,7 +44,8 @@ impl Tool for JsonTool {
                     set_nested_value(&mut root, path_parts, value)?;
                 }
 
-                Ok(Some(Output::JsonValue(root)))
+                let serialized = serde_json::to_string_pretty(&root)?;
+                Ok(Some(Output::Text(serialized)))
             }
         }
     }
