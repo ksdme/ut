@@ -43,11 +43,7 @@ impl Tool for QRTool {
                 .module_dimensions(2, 1)
                 .build();
 
-            // The output here is visual, so emit this directly instead of
-            // returning the value.
-            println!("{}", string);
-
-            Ok(None)
+            Ok(Some(Output::Text(string)))
         }
     }
 }

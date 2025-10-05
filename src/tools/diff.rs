@@ -137,8 +137,9 @@ impl Tool for DiffTool {
             ));
         }
 
+        let mut output = String::new();
         for (o_line_no, n_line_no, line) in lines.iter() {
-            print!(
+            output.push_str(&format!(
                 "{} {}",
                 format!(
                     "{:>width$} {:>width$} ┊",
@@ -148,10 +149,10 @@ impl Tool for DiffTool {
                 )
                 .dimmed(),
                 line,
-            );
+            ));
         }
 
-        Ok(None)
+        Ok(Some(Output::Text(output)))
     }
 }
 

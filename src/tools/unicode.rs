@@ -14,14 +14,13 @@ impl Tool for UnicodeTool {
     }
 
     fn execute(&self) -> anyhow::Result<Option<Output>> {
+        let mut output = String::new();
         for (_, items) in data::unicode::UNICODE_CHARS {
             for (name, letter) in items.iter() {
-                println!("{} {}", letter, name);
+                output.push_str(&format!("{} {}\n", letter, name));
             }
         }
 
-        // To prevent copying all the data, we return nothing from this tool
-        // and instead print it out here itself.
-        Ok(None)
+        Ok(Some(Output::Text(output)))
     }
 }

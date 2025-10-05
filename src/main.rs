@@ -88,6 +88,9 @@ fn main() -> anyhow::Result<()> {
                 serde_json::to_string_pretty(&value).context("Could not serialize result")?
             );
         }
+        Some(Output::Text(text)) => {
+            println!("{}", text);
+        }
         None => {}
     }
 
