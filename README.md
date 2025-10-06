@@ -41,7 +41,7 @@ Run `ut --help` to see all available tools, or `ut <TOOL> --help` for specific t
 │   │   ├── v4
 │   │   ├── v5
 │   │   └── v7
-│   ├── token       - Generate secure random tokens
+│   ├── token (secret) - Generate secure random tokens
 │   ├── lorem       - Generate lorem ipsum text
 │   └── random      - Generate random numbers
 ├── Text Processing
@@ -54,14 +54,14 @@ Run `ut --help` to see all available tools, or `ut <TOOL> --help` for specific t
 │   │   ├── header
 │   │   ├── sentence
 │   │   └── snake
-│   ├── pretty-print - Unescape newlines and tabs
+│   ├── pretty-print (pp) - Unescape newlines and tabs
 │   └── diff        - Compare text with visual output
 ├── Development Tools
-│   ├── calc        - Expression calculator
+│   ├── calc (cal)  - Expression calculator
 │   ├── json        - JSON builder and utilities
 │   │   └── builder
 │   ├── regex       - Interactive regex tester
-│   └── datetime    - Parse and convert datetimes
+│   └── datetime (dt) - Parse and convert datetimes
 ├── Web & Network
 │   ├── http        - HTTP utilities
 │   │   └── status
@@ -125,14 +125,14 @@ ut uuid v7
 ut uuid v7 --count 5
 ```
 
-#### `token`
+#### `token` (alias: `secret`)
 Generate cryptographically secure random tokens.
 - Customizable length and character sets
 - Uses OS-level secure randomness
 
 ```bash
 ut token --length 32
-ut token --no-symbols --length 64
+ut secret --no-symbols --length 64
 ```
 
 #### `lorem`
@@ -166,11 +166,12 @@ ut case camel "hello_world"
 ut case snake "HelloWorld"
 ```
 
-#### `pretty-print`
+#### `pretty-print` (alias: `pp`)
 Resolve escaped newlines and tab characters in text.
 
 ```bash
 ut pretty-print "hello\nworld\ttab"
+ut pp "hello\nworld\ttab"
 ```
 
 #### `diff`
@@ -185,7 +186,7 @@ ut diff  # Opens editor for both inputs
 
 ### Development Tools
 
-#### `calc`
+#### `calc` (alias: `cal`)
 Expression calculator with support for multiple number formats and mathematical functions.
 - Supports arithmetic operations, exponentiation, functions (sin, cos, tan, log, exp, sqrt, abs, floor, ceil, round)
 - Binary (0b), hexadecimal (0x), and decimal number formats
@@ -194,7 +195,7 @@ Expression calculator with support for multiple number formats and mathematical 
 
 ```bash
 ut calc "2 + 2 * 3"
-ut calc "sin(pi / 2)"
+ut cal "sin(pi / 2)"
 ut calc "0xFF + 0b1010"
 ut calc "sqrt(16) ^ 2"
 ```
@@ -222,7 +223,7 @@ ut regex
 ut regex --test sample.txt
 ```
 
-#### `datetime`
+#### `datetime` (alias: `dt`)
 Parse and convert datetimes between timezones.
 - Support for ISO 8601 and custom format strings
 - Convert between timezones
@@ -230,7 +231,7 @@ Parse and convert datetimes between timezones.
 
 ```bash
 ut datetime now
-ut datetime "2025-10-04T15:30:00Z" --target-timezone "Asia/Tokyo"
+ut dt "2025-10-04T15:30:00Z" --target-timezone "Asia/Tokyo"
 ut datetime "October 04, 2025 03:30 PM" --source-timezone UTC --parse-format "MonthName Day2, Year4 Hour12:Minute2 AMPM"
 ```
 
