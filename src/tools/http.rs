@@ -3,10 +3,7 @@ use anyhow::Context;
 use clap::{Command, CommandFactory, Parser};
 
 #[derive(Parser, Debug)]
-#[command(
-    name = "http",
-    about = "HTTP status codes and their descriptions"
-)]
+#[command(name = "http", about = "HTTP status codes and their descriptions")]
 pub struct HttpTool {
     #[command(subcommand)]
     command: HttpCommand,
