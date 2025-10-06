@@ -475,36 +475,13 @@ impl Tool for DateTimeTool {
             }
         }
 
-        // Helper function to format datetime
-        let format_datetime = |z: &Zoned| -> String {
-            let offset = z.offset();
-            let dt = z.datetime();
-            let date = dt.date();
-            let time = dt.time();
-            let formatted_time = format!(
-                "{:02}:{:02}:{:02}",
-                time.hour(),
-                time.minute(),
-                time.second()
-            );
+        // Helper function to format datetime in ISO format using jiff (with centisecond precision)
+        let format_datetime_iso =
+            |z: &Zoned| -> String { z.strftime("%Y-%m-%dT%H:%M:%S%.2f%:z[%V]").to_string() };
 
-            if offset.seconds() == 0 {
-                // UTC - use Z notation
-                format!("{}T{}Z", date, formatted_time)
-            } else {
-                // Non-UTC - use offset notation
-                let offset_str = if offset.seconds() >= 0 {
-                    let hours = offset.seconds() / 3600;
-                    let minutes = (offset.seconds() % 3600) / 60;
-                    format!("+{:02}:{:02}", hours, minutes)
-                } else {
-                    let hours = (-offset.seconds()) / 3600;
-                    let minutes = ((-offset.seconds()) % 3600) / 60;
-                    format!("-{:02}:{:02}", hours, minutes)
-                };
-                format!("{}T{}{}", date, formatted_time, offset_str)
-            }
-        };
+        // Helper function to format datetime in human-readable format using jiff
+        let format_datetime_human =
+            |z: &Zoned| -> String { z.strftime("%a, %b %d %Y %H:%M:%S %Z").to_string() };
 
         // Generate outputs for local, UTC, and target timezone
         let local_tz = TimeZone::system();
@@ -512,15 +489,18 @@ impl Tool for DateTimeTool {
         let utc_time = zoned.with_time_zone(TimeZone::UTC);
 
         let mut result = serde_json::json!({
-            "local": format_datetime(&local_time),
-            "utc": format_datetime(&utc_time),
+            "local": format_datetime_iso(&local_time),
+            "local_human": format_datetime_human(&local_time),
+            "utc": format_datetime_iso(&utc_time),
+            "utc_human": format_datetime_human(&utc_time),
         });
 
         // Add target timezone if specified
         if let Some(ref tz_str) = self.target_timezone {
             let tz = TimeZone::get(tz_str).context("Could not parse timezone")?;
             let target_time = zoned.with_time_zone(tz);
-            result["target"] = serde_json::json!(format_datetime(&target_time));
+            result["target"] = serde_json::json!(format_datetime_iso(&target_time));
+            result["target_human"] = serde_json::json!(format_datetime_human(&target_time));
         }
 
         Ok(Some(Output::JsonValue(result)))
@@ -583,8 +563,8 @@ mod tests {
         if let Some(Output::JsonValue(val)) = result {
             let utc = val["utc"].as_str().unwrap();
             // source_timezone overrides the Z, reinterpreting 15:30 as New York time
-            // New York is UTC-4 or UTC-5, so 15:30 in NY becomes 19:30 or 20:30 UTC
-            assert!(utc.contains("2025-10-04") && (utc.contains("19:30") || utc.contains("20:30")));
+            // New York is UTC-4 (EDT in October), so 15:30 in NY becomes 19:30 UTC
+            assert_eq!(utc, "2025-10-04T19:30:00.00+00:00[UTC]");
         }
     }
 
@@ -600,7 +580,7 @@ mod tests {
         let result = tool.execute().unwrap();
         if let Some(Output::JsonValue(val)) = result {
             let target = val["target"].as_str().unwrap();
-            assert!(target.contains("+09:00")); // JST
+            assert_eq!(target, "2025-10-05T00:30:00.00+09:00[Asia/Tokyo]");
         }
     }
 
@@ -616,7 +596,7 @@ mod tests {
         let result = tool.execute().unwrap();
         if let Some(Output::JsonValue(val)) = result {
             let target = val["target"].as_str().unwrap();
-            assert!(target.contains("+05:30")); // IST
+            assert_eq!(target, "2025-10-04T21:00:00.00+05:30[Asia/Kolkata]");
         }
     }
 
@@ -632,8 +612,7 @@ mod tests {
         let result = tool.execute().unwrap();
         if let Some(Output::JsonValue(val)) = result {
             let utc = val["utc"].as_str().unwrap();
-            assert!(utc.ends_with('Z'));
-            assert!(utc.contains("2025-10-04T15:30:00"));
+            assert_eq!(utc, "2025-10-04T15:30:00.00+00:00[UTC]");
         }
     }
 
@@ -649,8 +628,7 @@ mod tests {
         let result = tool.execute().unwrap();
         if let Some(Output::JsonValue(val)) = result {
             let utc = val["utc"].as_str().unwrap();
-            // UTC should end with Z
-            assert!(utc.ends_with('Z'));
+            assert_eq!(utc, "2025-10-04T10:00:00.00+00:00[UTC]");
         }
     }
 
@@ -665,7 +643,8 @@ mod tests {
 
         let result = tool.execute().unwrap();
         if let Some(Output::JsonValue(val)) = result {
-            assert_eq!(val["utc"].as_str().unwrap(), "2025-10-04T15:30:00Z");
+            let utc = val["utc"].as_str().unwrap();
+            assert_eq!(utc, "2025-10-04T15:30:00.00+00:00[UTC]");
         }
     }
 
@@ -680,7 +659,8 @@ mod tests {
 
         let result = tool.execute().unwrap();
         if let Some(Output::JsonValue(val)) = result {
-            assert_eq!(val["utc"].as_str().unwrap(), "2025-10-04T15:30:00Z");
+            let utc = val["utc"].as_str().unwrap();
+            assert_eq!(utc, "2025-10-04T15:30:00.00+00:00[UTC]");
         }
     }
 
@@ -696,8 +676,8 @@ mod tests {
         let result = tool.execute().unwrap();
         if let Some(Output::JsonValue(val)) = result {
             let target = val["target"].as_str().unwrap();
-            // Converted to UTC, should end with Z
-            assert!(target.ends_with('Z'));
+            // 15:30 +05:30 is 10:00 UTC, but the format only parses minutes not seconds
+            assert_eq!(target, "2025-10-04T10:30:00.00+00:00[UTC]");
         }
     }
 
@@ -713,7 +693,7 @@ mod tests {
         let result = tool.execute().unwrap();
         if let Some(Output::JsonValue(val)) = result {
             let utc = val["utc"].as_str().unwrap();
-            assert!(utc.contains("2024-10-04T15:50:00Z"));
+            assert_eq!(utc, "2024-10-04T15:50:00.00+00:00[UTC]");
         }
     }
 
@@ -729,7 +709,7 @@ mod tests {
         let result = tool.execute().unwrap();
         if let Some(Output::JsonValue(val)) = result {
             let utc = val["utc"].as_str().unwrap();
-            assert!(utc.contains("2024-10-04T15:50:00Z"));
+            assert_eq!(utc, "2024-10-04T15:50:00.50+00:00[UTC]");
         }
     }
 
@@ -745,7 +725,7 @@ mod tests {
         let result = tool.execute().unwrap();
         if let Some(Output::JsonValue(val)) = result {
             let utc = val["utc"].as_str().unwrap();
-            assert!(utc.contains("2024-10-04T15:50:00Z"));
+            assert_eq!(utc, "2024-10-04T15:50:00.00+00:00[UTC]");
         }
     }
 
@@ -762,8 +742,7 @@ mod tests {
         let result = tool.execute().unwrap();
         if let Some(Output::JsonValue(val)) = result {
             let utc = val["utc"].as_str().unwrap();
-            // This is in year 2286
-            assert!(utc.contains("2286"));
+            assert_eq!(utc, "2286-11-20T17:46:39.00+00:00[UTC]");
         }
     }
 
@@ -779,7 +758,7 @@ mod tests {
         let result = tool.execute().unwrap();
         if let Some(Output::JsonValue(val)) = result {
             let utc = val["utc"].as_str().unwrap();
-            assert!(utc.contains("2024-10-04T15:50:00Z"));
+            assert_eq!(utc, "2024-10-04T15:50:00.50+00:00[UTC]");
         }
     }
 }
