@@ -372,3 +372,370 @@ fn format_hex(value: Decimal) -> Option<String> {
         Some(format!("0x{:x}", int_val))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_addition() {
+        let tool = CalcTool {
+            expression: "2 + 3".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "5");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x5");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b101");
+    }
+
+    #[test]
+    fn test_subtraction() {
+        let tool = CalcTool {
+            expression: "10 - 7".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "3");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x3");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b11");
+    }
+
+    #[test]
+    fn test_multiplication() {
+        let tool = CalcTool {
+            expression: "4 * 5".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "20");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x14");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b10100");
+    }
+
+    #[test]
+    fn test_division() {
+        let tool = CalcTool {
+            expression: "20 / 4".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "5");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x5");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b101");
+    }
+
+    #[test]
+    fn test_float_division() {
+        let tool = CalcTool {
+            expression: "7 / 2".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert!(val["decimal"].as_str().unwrap().starts_with("3.5"));
+        assert!(val["hex"].is_null());
+        assert!(val["binary"].is_null());
+    }
+
+    #[test]
+    fn test_modulo() {
+        let tool = CalcTool {
+            expression: "10 % 3".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "1");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x1");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b1");
+    }
+
+    #[test]
+    fn test_exponentiation() {
+        let tool = CalcTool {
+            expression: "2 ^ 8".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "256");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x100");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b100000000");
+    }
+
+    #[test]
+    fn test_complex_expression() {
+        let tool = CalcTool {
+            expression: "(2 + 3) * 4 - 6 / 2".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "17");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x11");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b10001");
+    }
+
+    #[test]
+    fn test_nested_parentheses() {
+        let tool = CalcTool {
+            expression: "((10 + 5) * 2) / 3".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "10");
+        assert_eq!(val["hex"].as_str().unwrap(), "0xa");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b1010");
+    }
+
+    #[test]
+    fn test_negative_numbers() {
+        let tool = CalcTool {
+            expression: "-5 + 10".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "5");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x5");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b101");
+    }
+
+    #[test]
+    fn test_decimal_numbers() {
+        let tool = CalcTool {
+            expression: "3.14 * 2".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "6.28");
+        assert!(val["hex"].is_null());
+        assert!(val["binary"].is_null());
+    }
+
+    #[test]
+    fn test_hex_input() {
+        let tool = CalcTool {
+            expression: "0xFF + 1".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "256");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x100");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b100000000");
+    }
+
+    #[test]
+    fn test_binary_input() {
+        let tool = CalcTool {
+            expression: "0b1010 + 0b0101".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "15");
+        assert_eq!(val["hex"].as_str().unwrap(), "0xf");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b1111");
+    }
+
+    #[test]
+    fn test_hex_output() {
+        let tool = CalcTool {
+            expression: "255".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "255");
+        assert_eq!(val["hex"].as_str().unwrap(), "0xff");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b11111111");
+    }
+
+    #[test]
+    fn test_binary_output() {
+        let tool = CalcTool {
+            expression: "15".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "15");
+        assert_eq!(val["hex"].as_str().unwrap(), "0xf");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b1111");
+    }
+
+    #[test]
+    fn test_sqrt_function() {
+        let tool = CalcTool {
+            expression: "sqrt(16)".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert!(val["decimal"].as_str().unwrap().starts_with("4"));
+        assert_eq!(val["hex"].as_str().unwrap(), "0x4");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b100");
+    }
+
+    #[test]
+    fn test_abs_function() {
+        let tool = CalcTool {
+            expression: "abs(-42)".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "42");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x2a");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b101010");
+    }
+
+    #[test]
+    fn test_floor_function() {
+        let tool = CalcTool {
+            expression: "floor(3.7)".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "3");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x3");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b11");
+    }
+
+    #[test]
+    fn test_ceil_function() {
+        let tool = CalcTool {
+            expression: "ceil(3.2)".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "4");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x4");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b100");
+    }
+
+    #[test]
+    fn test_round_function() {
+        let tool = CalcTool {
+            expression: "round(3.6)".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "4");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x4");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b100");
+    }
+
+    #[test]
+    fn test_pi_constant() {
+        let tool = CalcTool {
+            expression: "pi * 2".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        let decimal_val = val["decimal"].as_str().unwrap();
+        assert!(decimal_val.starts_with("6.28318"));
+        assert!(val["hex"].is_null());
+        assert!(val["binary"].is_null());
+    }
+
+    #[test]
+    fn test_e_constant() {
+        let tool = CalcTool {
+            expression: "e".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        let decimal_val = val["decimal"].as_str().unwrap();
+        assert!(decimal_val.starts_with("2.71828"));
+        assert!(val["hex"].is_null());
+        assert!(val["binary"].is_null());
+    }
+
+    #[test]
+    fn test_invalid_expression() {
+        let tool = CalcTool {
+            expression: "2 + * 3".to_string(),
+        };
+        let result = tool.execute();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_division_by_zero() {
+        let tool = CalcTool {
+            expression: "5 / 0".to_string(),
+        };
+        let result = tool.execute();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_sqrt_negative() {
+        let tool = CalcTool {
+            expression: "sqrt(-1)".to_string(),
+        };
+        let result = tool.execute();
+
+        assert!(result.is_err());
+    }
+}
