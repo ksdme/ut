@@ -2,6 +2,7 @@
 name = "ut"
 version = "0.1.0"
 edition = "2024"
+repository = "https://github.com/ksdme/ut"
 
 [dependencies]
 anyhow = "1.0.99"
@@ -40,3 +41,8 @@ regex = "1.10"
 tui-textarea = "0.6"
 jiff = "0.1"
 tabled = "0.18"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
