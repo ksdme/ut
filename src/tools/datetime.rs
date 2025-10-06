@@ -18,7 +18,14 @@ use nom::{
     about = "Parse and convert datetime to different timezones"
 )]
 pub struct DateTimeTool {
-    /// DateTime value to parse (use "now" for current time)
+    /// DateTime value to parse
+    ///
+    /// Supported formats:
+    /// - "now" for current time
+    /// - ISO 8601: 2025-10-04T15:30:00Z
+    /// - Unix timestamp in seconds: 1728057000 or 1728057000.5
+    /// - Unix timestamp in milliseconds: 1728057000000ms or 1728057000500.5ms
+    /// - Custom format (requires --parse-format)
     datetime: String,
 
     /// Input timezone to use when parsing datetime without timezone info (overrides any timezone in the input)
@@ -415,6 +422,31 @@ impl Tool for DateTimeTool {
                     .parse::<Timestamp>()
                     .map(|ts| ts.to_zoned(TimeZone::UTC))
                     .or_else(|_| -> anyhow::Result<Zoned> {
+                        // Try parsing as Unix timestamp
+                        // Check if it ends with "ms" for milliseconds
+                        let (timestamp_str, is_milliseconds) = if self.datetime.ends_with("ms") {
+                            (&self.datetime[..self.datetime.len() - 2], true)
+                        } else {
+                            (self.datetime.as_str(), false)
+                        };
+
+                        if let Ok(timestamp_f64) = timestamp_str.parse::<f64>() {
+                            let timestamp_secs = if is_milliseconds {
+                                // Convert milliseconds to seconds
+                                timestamp_f64 / 1000.0
+                            } else {
+                                // Already in seconds
+                                timestamp_f64
+                            };
+
+                            let secs = timestamp_secs.trunc() as i64;
+                            let nanos =
+                                ((timestamp_secs.fract() * 1_000_000_000.0).round() as i32).abs();
+
+                            let ts = Timestamp::new(secs, nanos)?;
+                            return Ok(ts.to_zoned(TimeZone::UTC));
+                        }
+
                         // If no offset, try parsing as civil datetime and use input timezone or UTC
                         use jiff::civil::DateTime;
                         let dt: DateTime =
@@ -666,6 +698,88 @@ mod tests {
             let target = val["target"].as_str().unwrap();
             // Converted to UTC, should end with Z
             assert!(target.ends_with('Z'));
+        }
+    }
+
+    #[test]
+    fn test_parse_unix_timestamp_seconds() {
+        let tool = DateTimeTool {
+            datetime: "1728057000".to_string(), // 2024-10-04 15:50:00 UTC
+            source_timezone: None,
+            target_timezone: None,
+            parse_format: None,
+        };
+
+        let result = tool.execute().unwrap();
+        if let Some(Output::JsonValue(val)) = result {
+            let utc = val["utc"].as_str().unwrap();
+            assert!(utc.contains("2024-10-04T15:50:00Z"));
+        }
+    }
+
+    #[test]
+    fn test_parse_unix_timestamp_fractional() {
+        let tool = DateTimeTool {
+            datetime: "1728057000.5".to_string(), // 2024-10-04 15:50:00.5 UTC
+            source_timezone: None,
+            target_timezone: None,
+            parse_format: None,
+        };
+
+        let result = tool.execute().unwrap();
+        if let Some(Output::JsonValue(val)) = result {
+            let utc = val["utc"].as_str().unwrap();
+            assert!(utc.contains("2024-10-04T15:50:00Z"));
+        }
+    }
+
+    #[test]
+    fn test_parse_unix_timestamp_milliseconds() {
+        let tool = DateTimeTool {
+            datetime: "1728057000000ms".to_string(), // 2024-10-04 15:50:00 UTC in milliseconds
+            source_timezone: None,
+            target_timezone: None,
+            parse_format: None,
+        };
+
+        let result = tool.execute().unwrap();
+        if let Some(Output::JsonValue(val)) = result {
+            let utc = val["utc"].as_str().unwrap();
+            assert!(utc.contains("2024-10-04T15:50:00Z"));
+        }
+    }
+
+    #[test]
+    fn test_parse_unix_timestamp_without_ms_suffix_as_seconds() {
+        // Numbers without "ms" suffix are always treated as seconds
+        let tool = DateTimeTool {
+            datetime: "9999999999".to_string(), // Treated as seconds (year 2286)
+            source_timezone: None,
+            target_timezone: None,
+            parse_format: None,
+        };
+
+        let result = tool.execute().unwrap();
+        if let Some(Output::JsonValue(val)) = result {
+            let utc = val["utc"].as_str().unwrap();
+            // This is in year 2286
+            assert!(utc.contains("2286"));
+        }
+    }
+
+    #[test]
+    fn test_parse_unix_timestamp_fractional_milliseconds() {
+        let tool = DateTimeTool {
+            datetime: "1728057000500.5ms".to_string(), // 2024-10-04 15:50:00.5005 UTC
+            source_timezone: None,
+            target_timezone: None,
+            parse_format: None,
+        };
+
+        let result = tool.execute().unwrap();
+        if let Some(Output::JsonValue(val)) = result {
+            let utc = val["utc"].as_str().unwrap();
+            assert!(utc.contains("2024-10-04T15:50:00Z"));
         }
     }
 }
