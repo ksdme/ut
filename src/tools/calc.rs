@@ -7,6 +7,7 @@ use nom::{
     bytes::complete::{tag, tag_no_case, take_while1},
     character::complete::{char, multispace0},
     combinator::{map, map_res, opt, recognize},
+    error::VerboseError,
     multi::separated_list0,
     sequence::{delimited, pair, preceded, tuple},
 };
@@ -59,33 +60,34 @@ fn evaluate_expression(input: &str) -> Result<Decimal> {
                 ))
             }
         }
-        Err(e) => Err(anyhow!("Parse error: {}", e)),
+        Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
+            Err(anyhow!("{}", nom::error::convert_error(input.trim(), e)))
+        }
+        Err(nom::Err::Incomplete(_)) => Err(anyhow!("Incomplete expression")),
     }
 }
 
 /// Parses a complete mathematical expression with proper precedence
-fn parse_expression(input: &str) -> IResult<&str, Decimal> {
+fn parse_expression(input: &str) -> IResult<&str, Decimal, VerboseError<&str>> {
     delimited(multispace0, parse_bitwise_or, multispace0)(input)
 }
 
 /// Validates operands for bitwise operations and converts them to u64
 /// Returns an error if operands are not non-negative integers within u64 range
-fn validate_bitwise_operands(a: Decimal, b: Decimal) -> Result<(u64, u64)> {
+fn validate_bitwise_operands(a: Decimal, b: Decimal) -> Result<(u64, u64), &'static str> {
     if a.fract() != Decimal::ZERO || b.fract() != Decimal::ZERO {
-        Err(anyhow!("Bitwise operations require integer operands"))
+        Err("Bitwise operations require integer operands")
     } else if a.is_sign_negative() || b.is_sign_negative() {
-        Err(anyhow!("Bitwise operations require non-negative integers"))
+        Err("Bitwise operations require non-negative integers")
     } else if a > Decimal::from(u64::MAX) || b > Decimal::from(u64::MAX) {
-        Err(anyhow!(
-            "Bitwise operations require values within u64 range"
-        ))
+        Err("Bitwise operations require values within u64 range")
     } else {
         Ok((a.to_u64().unwrap(), b.to_u64().unwrap()))
     }
 }
 
 /// Handles bitwise OR (lower precedence than AND)
-fn parse_bitwise_or(input: &str) -> IResult<&str, Decimal> {
+fn parse_bitwise_or(input: &str) -> IResult<&str, Decimal, VerboseError<&str>> {
     let (input, init) = parse_bitwise_and(input)?;
 
     let (input, ops) = nom::multi::many0(pair(
@@ -97,11 +99,10 @@ fn parse_bitwise_or(input: &str) -> IResult<&str, Decimal> {
     for (_, val) in ops {
         match validate_bitwise_operands(result, val) {
             Ok((a, b)) => result = Decimal::from(a | b),
-            Err(_) => {
-                return Err(nom::Err::Failure(nom::error::Error::new(
-                    input,
-                    nom::error::ErrorKind::Verify,
-                )));
+            Err(e) => {
+                return Err(nom::Err::Failure(VerboseError {
+                    errors: vec![(input, nom::error::VerboseErrorKind::Context(e))],
+                }));
             }
         }
     }
@@ -110,7 +111,7 @@ fn parse_bitwise_or(input: &str) -> IResult<&str, Decimal> {
 }
 
 /// Handles bitwise AND (higher precedence than OR, lower than addition)
-fn parse_bitwise_and(input: &str) -> IResult<&str, Decimal> {
+fn parse_bitwise_and(input: &str) -> IResult<&str, Decimal, VerboseError<&str>> {
     let (input, init) = parse_additive(input)?;
 
     let (input, ops) = nom::multi::many0(pair(
@@ -122,11 +123,10 @@ fn parse_bitwise_and(input: &str) -> IResult<&str, Decimal> {
     for (_, val) in ops {
         match validate_bitwise_operands(result, val) {
             Ok((a, b)) => result = Decimal::from(a & b),
-            Err(_) => {
-                return Err(nom::Err::Failure(nom::error::Error::new(
-                    input,
-                    nom::error::ErrorKind::Verify,
-                )));
+            Err(e) => {
+                return Err(nom::Err::Failure(VerboseError {
+                    errors: vec![(input, nom::error::VerboseErrorKind::Context(e))],
+                }));
             }
         }
     }
@@ -135,7 +135,7 @@ fn parse_bitwise_and(input: &str) -> IResult<&str, Decimal> {
 }
 
 /// Handles addition and subtraction (medium precedence)
-fn parse_additive(input: &str) -> IResult<&str, Decimal> {
+fn parse_additive(input: &str) -> IResult<&str, Decimal, VerboseError<&str>> {
     let (input, init) = parse_multiplicative(input)?;
 
     let (input, ops) = nom::multi::many0(pair(
@@ -153,7 +153,7 @@ fn parse_additive(input: &str) -> IResult<&str, Decimal> {
 }
 
 /// Handles multiplication, division, and modulo (medium precedence)
-fn parse_multiplicative(input: &str) -> IResult<&str, Decimal> {
+fn parse_multiplicative(input: &str) -> IResult<&str, Decimal, VerboseError<&str>> {
     let (input, init) = parse_power(input)?;
 
     let (input, ops) = nom::multi::many0(pair(
@@ -171,10 +171,12 @@ fn parse_multiplicative(input: &str) -> IResult<&str, Decimal> {
             '*' => result = result * val,
             '/' => {
                 if val.is_zero() {
-                    return Err(nom::Err::Failure(nom::error::Error::new(
-                        input,
-                        nom::error::ErrorKind::Verify,
-                    )));
+                    return Err(nom::Err::Failure(VerboseError {
+                        errors: vec![(
+                            input,
+                            nom::error::VerboseErrorKind::Context("Division by zero"),
+                        )],
+                    }));
                 }
                 result = result / val;
             }
@@ -187,7 +189,7 @@ fn parse_multiplicative(input: &str) -> IResult<&str, Decimal> {
 }
 
 /// Handles exponentiation (high precedence, right-associative)
-fn parse_power(input: &str) -> IResult<&str, Decimal> {
+fn parse_power(input: &str) -> IResult<&str, Decimal, VerboseError<&str>> {
     let (input, base) = parse_unary(input)?;
 
     let (input, exponent) = opt(preceded(
@@ -202,7 +204,7 @@ fn parse_power(input: &str) -> IResult<&str, Decimal> {
 }
 
 /// Handles unary operators (+ and -)
-fn parse_unary(input: &str) -> IResult<&str, Decimal> {
+fn parse_unary(input: &str) -> IResult<&str, Decimal, VerboseError<&str>> {
     alt((
         map(preceded(char('-'), parse_unary), |val| -val),
         map(preceded(char('+'), parse_unary), |val| val),
@@ -211,7 +213,7 @@ fn parse_unary(input: &str) -> IResult<&str, Decimal> {
 }
 
 /// Handles primary expressions (numbers, functions, parentheses)
-fn parse_primary(input: &str) -> IResult<&str, Decimal> {
+fn parse_primary(input: &str) -> IResult<&str, Decimal, VerboseError<&str>> {
     delimited(
         multispace0,
         alt((
@@ -225,7 +227,7 @@ fn parse_primary(input: &str) -> IResult<&str, Decimal> {
 }
 
 /// Parses mathematical functions with arguments
-fn parse_function(input: &str) -> IResult<&str, Decimal> {
+fn parse_function(input: &str) -> IResult<&str, Decimal, VerboseError<&str>> {
     let (input, name) = parse_identifier(input)?;
 
     let (input, _) = char('(')(input)?;
@@ -237,15 +239,14 @@ fn parse_function(input: &str) -> IResult<&str, Decimal> {
 
     match apply_function(&name, args) {
         Ok(result) => Ok((input, result)),
-        Err(_) => Err(nom::Err::Failure(nom::error::Error::new(
-            input,
-            nom::error::ErrorKind::Verify,
-        ))),
+        Err(e) => Err(nom::Err::Failure(VerboseError {
+            errors: vec![(input, nom::error::VerboseErrorKind::Context(e))],
+        })),
     }
 }
 
 /// Parses mathematical constants (pi, e)
-fn parse_constant(input: &str) -> IResult<&str, Decimal> {
+fn parse_constant(input: &str) -> IResult<&str, Decimal, VerboseError<&str>> {
     alt((
         map(tag_no_case("pi"), |_| {
             Decimal::from_str("3.1415926535897932384626433832795").unwrap()
@@ -257,40 +258,46 @@ fn parse_constant(input: &str) -> IResult<&str, Decimal> {
 }
 
 /// Parses numbers in various formats (decimal, hex, binary)
-fn parse_number(input: &str) -> IResult<&str, Decimal> {
+fn parse_number(input: &str) -> IResult<&str, Decimal, VerboseError<&str>> {
     alt((parse_hex_number, parse_binary_number, parse_decimal_number))(input)
 }
 
 /// Parses hexadecimal numbers (0x prefix)
-fn parse_hex_number(input: &str) -> IResult<&str, Decimal> {
+fn parse_hex_number(input: &str) -> IResult<&str, Decimal, VerboseError<&str>> {
     let (input, _) = tag_no_case("0x")(input)?;
     let (input, hex_str) = take_while1(|c: char| c.is_ascii_hexdigit())(input)?;
 
     match u64::from_str_radix(hex_str, 16) {
         Ok(value) => Ok((input, Decimal::from(value))),
-        Err(_) => Err(nom::Err::Failure(nom::error::Error::new(
-            input,
-            nom::error::ErrorKind::Verify,
-        ))),
+        Err(_) => Err(nom::Err::Failure(VerboseError {
+            errors: vec![(
+                input,
+                nom::error::VerboseErrorKind::Context(
+                    "Invalid hexadecimal number (must fit in u64)",
+                ),
+            )],
+        })),
     }
 }
 
 /// Parses binary numbers (0b prefix)
-fn parse_binary_number(input: &str) -> IResult<&str, Decimal> {
+fn parse_binary_number(input: &str) -> IResult<&str, Decimal, VerboseError<&str>> {
     let (input, _) = tag_no_case("0b")(input)?;
     let (input, bin_str) = take_while1(|c: char| c == '0' || c == '1')(input)?;
 
     match u64::from_str_radix(bin_str, 2) {
         Ok(value) => Ok((input, Decimal::from(value))),
-        Err(_) => Err(nom::Err::Failure(nom::error::Error::new(
-            input,
-            nom::error::ErrorKind::Verify,
-        ))),
+        Err(_) => Err(nom::Err::Failure(VerboseError {
+            errors: vec![(
+                input,
+                nom::error::VerboseErrorKind::Context("Invalid binary number (must fit in u64)"),
+            )],
+        })),
     }
 }
 
 /// Parses decimal numbers (including floating point)
-fn parse_decimal_number(input: &str) -> IResult<&str, Decimal> {
+fn parse_decimal_number(input: &str) -> IResult<&str, Decimal, VerboseError<&str>> {
     map_res(
         recognize(tuple((
             opt(alt((char('+'), char('-')))),
@@ -307,7 +314,7 @@ fn parse_decimal_number(input: &str) -> IResult<&str, Decimal> {
 }
 
 /// Parses function and constant identifiers
-fn parse_identifier(input: &str) -> IResult<&str, String> {
+fn parse_identifier(input: &str) -> IResult<&str, String, VerboseError<&str>> {
     map(
         recognize(tuple((
             alt((nom::character::complete::alpha1, tag("_"))),
@@ -319,75 +326,73 @@ fn parse_identifier(input: &str) -> IResult<&str, String> {
 
 /// Applies mathematical functions to their arguments
 /// Supports trigonometric, logarithmic, exponential, and utility functions
-fn apply_function(name: &str, args: Vec<Decimal>) -> Result<Decimal> {
+fn apply_function(name: &str, args: Vec<Decimal>) -> Result<Decimal, &'static str> {
     match name {
         "sin" => {
             if args.len() != 1 {
-                return Err(anyhow!("sin() expects 1 argument"));
+                return Err("sin() expects 1 argument");
             }
             // Calculate sine (input in radians)
             Ok(args[0].sin())
         }
         "cos" => {
             if args.len() != 1 {
-                return Err(anyhow!("cos() expects 1 argument"));
+                return Err("cos() expects 1 argument");
             }
             // Calculate cosine (input in radians)
             Ok(args[0].cos())
         }
         "tan" => {
             if args.len() != 1 {
-                return Err(anyhow!("tan() expects 1 argument"));
+                return Err("tan() expects 1 argument");
             }
             // Calculate tangent (input in radians)
             Ok(args[0].tan())
         }
         "log" => {
             if args.len() != 1 {
-                return Err(anyhow!("log() expects 1 argument"));
+                return Err("log() expects 1 argument");
             }
             if args[0] <= Decimal::ZERO {
-                return Err(anyhow!("log() argument must be positive"));
+                return Err("log() argument must be positive");
             }
             // Calculate natural logarithm (base e)
             Ok(args[0].ln())
         }
         "exp" => {
             if args.len() != 1 {
-                return Err(anyhow!("exp() expects 1 argument"));
+                return Err("exp() expects 1 argument");
             }
             // Calculate e raised to the power of the argument
             Ok(args[0].exp())
         }
         "sqrt" => {
             if args.len() != 1 {
-                return Err(anyhow!("sqrt() expects 1 argument"));
+                return Err("sqrt() expects 1 argument");
             }
             if args[0] < Decimal::ZERO {
-                return Err(anyhow!("sqrt() argument must be non-negative"));
+                return Err("sqrt() argument must be non-negative");
             }
             // Calculate square root
-            Ok(args[0]
-                .sqrt()
-                .ok_or_else(|| anyhow!("Invalid sqrt operation"))?)
+            Ok(args[0].sqrt().ok_or("Invalid sqrt operation")?)
         }
         "abs" => {
             if args.len() != 1 {
-                return Err(anyhow!("abs() expects 1 argument"));
+                return Err("abs() expects 1 argument");
             }
             // Calculate absolute value (distance from zero)
             Ok(args[0].abs())
         }
         "floor" => {
             if args.len() != 1 {
-                return Err(anyhow!("floor() expects 1 argument"));
+                return Err("floor() expects 1 argument");
             }
             // Round down to the nearest integer
             Ok(args[0].floor())
         }
         "ceil" => {
             if args.len() != 1 {
-                return Err(anyhow!("ceil() expects 1 argument"));
+                return Err("ceil() expects 1 argument");
             }
             // Round up to the nearest integer
             Ok(args[0].ceil())
@@ -402,9 +407,9 @@ fn apply_function(name: &str, args: Vec<Decimal>) -> Result<Decimal> {
                 let decimal_places = args[1].to_u32().unwrap_or(0);
                 Ok(args[0].round_dp(decimal_places))
             }
-            _ => Err(anyhow!("round() expects 1 or 2 arguments")),
+            _ => Err("round() expects 1 or 2 arguments"),
         },
-        _ => Err(anyhow!("Unknown function: {}", name)),
+        _ => Err("Unknown function"),
     }
 }
 
