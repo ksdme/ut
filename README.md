@@ -5,7 +5,7 @@ A fast, lightweight CLI **utility toolkit** for developers and IT professionals.
 ## Installation
 
 <details>
-<summary>Install on **macOS** and **Linux** via homebrew</summary>
+<summary>Install on <b>macOS</b> or <b>Linux</b> via <b>homebrew</b></summary>
 
 ```bash
 brew install ksdme/tap/ut
@@ -14,7 +14,7 @@ brew install ksdme/tap/ut
 </details>
 
 <details>
-<summary>Install on macOS and Linux via **shell script**</summary>
+<summary>Install on <b>Linux</b> or <b>macOS</b> via <b>shell script</b></summary>
 
 ```bash
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ksdme/ut/releases/download/v0.2.0/ut-installer.sh | sh
@@ -23,7 +23,7 @@ curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ksdme/ut/releases/downl
 </details>
 
 <details>
-<summary>Install prebuilt binaries on **Windows** via powershell</summary>
+<summary>Install prebuilt binaries on <b>Windows</b> via powershell</summary>
 
 ```powershell
 powershell -ExecutionPolicy Bypass -c "irm https://github.com/ksdme/ut/releases/download/v0.2.0/ut-installer.ps1 | iex"
