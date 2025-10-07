@@ -41,7 +41,7 @@ cargo install --git https://github.com/ksdme/ut.git
 </details>
 
 
-You can also download prebuilt binaries directly from the [releases page](https://github.com/ksdme/ut/releases/tag/v0.1.0).
+You can also download prebuilt binaries directly from the [releases page](https://github.com/ksdme/ut/releases/).
 
 ## Usage
 
