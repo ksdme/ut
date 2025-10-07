@@ -2,6 +2,8 @@
 name = "ut"
 version = "0.1.0"
 edition = "2024"
+description = "A utility toolkit of most commonly used tools by software developers and IT professionals"
+homepage = "https://github.com/ksdme/ut"
 repository = "https://github.com/ksdme/ut"
 
 [dependencies]
