@@ -4,23 +4,42 @@ A fast, lightweight CLI **utility toolkit** for developers and IT professionals.
 
 ## Installation
 
-**Install from source**
+<details>
+<summary>Install on **macOS** and **Linux** via homebrew</summary>
+
+```bash
+brew install ksdme/tap/ut
+```
+
+</details>
+
+<details>
+<summary>Install on macOS and Linux via **shell script**</summary>
+
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ksdme/ut/releases/download/v0.2.0/ut-installer.sh | sh
+```
+
+</details>
+
+<details>
+<summary>Install prebuilt binaries on **Windows** via powershell</summary>
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/ksdme/ut/releases/download/v0.2.0/ut-installer.ps1 | iex"
+```
+
+</details>
+
+<details>
+<summary>Install from source</summary>
 
 ```bash
 cargo install --git https://github.com/ksdme/ut.git
 ```
 
-**Install prebuilt binaries via shell script**
+</details>
 
-```bash
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ksdme/ut/releases/download/v0.1.0/ut-installer.sh | sh
-```
-
-**Install prebuilt binaries via powershell script (Windows)**
-
-```powershell
-powershell -ExecutionPolicy Bypass -c "irm https://github.com/ksdme/ut/releases/download/v0.1.0/ut-installer.ps1 | iex"
-```
 
 You can also download prebuilt binaries directly from the [releases page](https://github.com/ksdme/ut/releases/tag/v0.1.0).
 
