@@ -55,7 +55,9 @@ macro_rules! toolbox {
 }
 
 fn main() -> anyhow::Result<()> {
-    let mut cli = clap::builder::Command::new("ut").about("a utility toolkit");
+    let mut cli = clap::builder::Command::new("ut")
+        .subcommand_required(true)
+        .arg_required_else_help(true);
 
     let output = toolbox!(
         cli,
