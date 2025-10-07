@@ -65,10 +65,76 @@ fn evaluate_expression(input: &str) -> Result<Decimal> {
 
 /// Parses a complete mathematical expression with proper precedence
 fn parse_expression(input: &str) -> IResult<&str, Decimal> {
-    delimited(multispace0, parse_additive, multispace0)(input)
+    delimited(multispace0, parse_bitwise_or, multispace0)(input)
 }
 
-/// Handles addition and subtraction (lowest precedence)
+/// Validates operands for bitwise operations and converts them to u64
+/// Returns an error if operands are not non-negative integers within u64 range
+fn validate_bitwise_operands(a: Decimal, b: Decimal) -> Result<(u64, u64)> {
+    if a.fract() != Decimal::ZERO || b.fract() != Decimal::ZERO {
+        Err(anyhow!("Bitwise operations require integer operands"))
+    } else if a.is_sign_negative() || b.is_sign_negative() {
+        Err(anyhow!("Bitwise operations require non-negative integers"))
+    } else if a > Decimal::from(u64::MAX) || b > Decimal::from(u64::MAX) {
+        Err(anyhow!(
+            "Bitwise operations require values within u64 range"
+        ))
+    } else {
+        Ok((a.to_u64().unwrap(), b.to_u64().unwrap()))
+    }
+}
+
+/// Handles bitwise OR (lower precedence than AND)
+fn parse_bitwise_or(input: &str) -> IResult<&str, Decimal> {
+    let (input, init) = parse_bitwise_and(input)?;
+
+    let (input, ops) = nom::multi::many0(pair(
+        delimited(multispace0, char('|'), multispace0),
+        parse_bitwise_and,
+    ))(input)?;
+
+    let mut result = init;
+    for (_, val) in ops {
+        match validate_bitwise_operands(result, val) {
+            Ok((a, b)) => result = Decimal::from(a | b),
+            Err(_) => {
+                return Err(nom::Err::Failure(nom::error::Error::new(
+                    input,
+                    nom::error::ErrorKind::Verify,
+                )));
+            }
+        }
+    }
+
+    Ok((input, result))
+}
+
+/// Handles bitwise AND (higher precedence than OR, lower than addition)
+fn parse_bitwise_and(input: &str) -> IResult<&str, Decimal> {
+    let (input, init) = parse_additive(input)?;
+
+    let (input, ops) = nom::multi::many0(pair(
+        delimited(multispace0, char('&'), multispace0),
+        parse_additive,
+    ))(input)?;
+
+    let mut result = init;
+    for (_, val) in ops {
+        match validate_bitwise_operands(result, val) {
+            Ok((a, b)) => result = Decimal::from(a & b),
+            Err(_) => {
+                return Err(nom::Err::Failure(nom::error::Error::new(
+                    input,
+                    nom::error::ErrorKind::Verify,
+                )));
+            }
+        }
+    }
+
+    Ok((input, result))
+}
+
+/// Handles addition and subtraction (medium precedence)
 fn parse_additive(input: &str) -> IResult<&str, Decimal> {
     let (input, init) = parse_multiplicative(input)?;
 
@@ -99,30 +165,25 @@ fn parse_multiplicative(input: &str) -> IResult<&str, Decimal> {
         parse_power,
     ))(input)?;
 
-    let result = ops
-        .into_iter()
-        .try_fold(init, |acc, (op, val)| -> Result<Decimal> {
-            match op {
-                '*' => Ok(acc * val),
-                '/' => {
-                    if val.is_zero() {
-                        Err(anyhow!("Division by zero"))
-                    } else {
-                        Ok(acc / val)
-                    }
+    let mut result = init;
+    for (op, val) in ops {
+        match op {
+            '*' => result = result * val,
+            '/' => {
+                if val.is_zero() {
+                    return Err(nom::Err::Failure(nom::error::Error::new(
+                        input,
+                        nom::error::ErrorKind::Verify,
+                    )));
                 }
-                '%' => Ok(acc % val),
-                _ => unreachable!(),
+                result = result / val;
             }
-        });
-
-    match result {
-        Ok(val) => Ok((input, val)),
-        Err(_) => Err(nom::Err::Failure(nom::error::Error::new(
-            input,
-            nom::error::ErrorKind::Verify,
-        ))),
+            '%' => result = result % val,
+            _ => unreachable!(),
+        }
     }
+
+    Ok((input, result))
 }
 
 /// Handles exponentiation (high precedence, right-associative)
@@ -737,5 +798,315 @@ mod tests {
         let result = tool.execute();
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_bitwise_and() {
+        let tool = CalcTool {
+            expression: "12 & 10".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        // 12 = 0b1100, 10 = 0b1010, 12 & 10 = 0b1000 = 8
+        assert_eq!(val["decimal"].as_str().unwrap(), "8");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x8");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b1000");
+    }
+
+    #[test]
+    fn test_bitwise_or() {
+        let tool = CalcTool {
+            expression: "12 | 10".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        // 12 = 0b1100, 10 = 0b1010, 12 | 10 = 0b1110 = 14
+        assert_eq!(val["decimal"].as_str().unwrap(), "14");
+        assert_eq!(val["hex"].as_str().unwrap(), "0xe");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b1110");
+    }
+
+    #[test]
+    fn test_bitwise_with_hex() {
+        let tool = CalcTool {
+            expression: "0xFF & 0x0F".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "15");
+        assert_eq!(val["hex"].as_str().unwrap(), "0xf");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b1111");
+    }
+
+    #[test]
+    fn test_bitwise_with_binary() {
+        let tool = CalcTool {
+            expression: "0b1111 | 0b1000".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "15");
+        assert_eq!(val["hex"].as_str().unwrap(), "0xf");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b1111");
+    }
+
+    #[test]
+    fn test_bitwise_precedence() {
+        let tool = CalcTool {
+            expression: "8 | 4 & 12".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        // & has higher precedence than |
+        // 4 & 12 = 4, then 8 | 4 = 12
+        assert_eq!(val["decimal"].as_str().unwrap(), "12");
+        assert_eq!(val["hex"].as_str().unwrap(), "0xc");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b1100");
+    }
+
+    #[test]
+    fn test_bitwise_with_parentheses() {
+        let tool = CalcTool {
+            expression: "(8 | 4) & 12".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        // (8 | 4) = 12, then 12 & 12 = 12
+        assert_eq!(val["decimal"].as_str().unwrap(), "12");
+        assert_eq!(val["hex"].as_str().unwrap(), "0xc");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b1100");
+    }
+
+    #[test]
+    fn test_bitwise_and_float_error() {
+        let tool = CalcTool {
+            expression: "3.5 & 2".to_string(),
+        };
+        let result = tool.execute();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_bitwise_or_float_error() {
+        let tool = CalcTool {
+            expression: "4 | 2.5".to_string(),
+        };
+        let result = tool.execute();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_bitwise_and_negative_error() {
+        let tool = CalcTool {
+            expression: "-5 & 3".to_string(),
+        };
+        let result = tool.execute();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_bitwise_or_negative_error() {
+        let tool = CalcTool {
+            expression: "5 | -3".to_string(),
+        };
+        let result = tool.execute();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_bitwise_complex_expression() {
+        let tool = CalcTool {
+            expression: "(0xFF & 0x0F) | (0x10 & 0x10)".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        // (255 & 15) | (16 & 16) = 15 | 16 = 31
+        assert_eq!(val["decimal"].as_str().unwrap(), "31");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x1f");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b11111");
+    }
+
+    #[test]
+    fn test_arithmetic_with_bitwise_and() {
+        let tool = CalcTool {
+            expression: "10 + 5 & 12".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        // 10 + 5 = 15, then 15 & 12 = 12
+        assert_eq!(val["decimal"].as_str().unwrap(), "12");
+        assert_eq!(val["hex"].as_str().unwrap(), "0xc");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b1100");
+    }
+
+    #[test]
+    fn test_arithmetic_with_bitwise_or() {
+        let tool = CalcTool {
+            expression: "8 - 4 | 2".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        // 8 - 4 = 4, then 4 | 2 = 6
+        assert_eq!(val["decimal"].as_str().unwrap(), "6");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x6");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b110");
+    }
+
+    #[test]
+    fn test_multiplication_with_bitwise() {
+        let tool = CalcTool {
+            expression: "2 * 4 & 7".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        // 2 * 4 = 8, then 8 & 7 = 0
+        assert_eq!(val["decimal"].as_str().unwrap(), "0");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x0");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b0");
+    }
+
+    #[test]
+    fn test_division_with_bitwise() {
+        let tool = CalcTool {
+            expression: "16 / 2 | 3".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        // 16 / 2 = 8, then 8 | 3 = 11
+        assert_eq!(val["decimal"].as_str().unwrap(), "11");
+        assert_eq!(val["hex"].as_str().unwrap(), "0xb");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b1011");
+    }
+
+    #[test]
+    fn test_bitwise_with_parentheses_arithmetic() {
+        let tool = CalcTool {
+            expression: "(10 | 5) + 2".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        // (10 | 5) = 15, then 15 + 2 = 17
+        assert_eq!(val["decimal"].as_str().unwrap(), "17");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x11");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b10001");
+    }
+
+    #[test]
+    fn test_mixed_bitwise_arithmetic() {
+        let tool = CalcTool {
+            expression: "3 + 4 & 5 | 2".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        // 3 + 4 = 7, 7 & 5 = 5, 5 | 2 = 7
+        assert_eq!(val["decimal"].as_str().unwrap(), "7");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x7");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b111");
+    }
+
+    #[test]
+    fn test_bitwise_or_chain() {
+        let tool = CalcTool {
+            expression: "1 | 2 | 4 | 8".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        // 1 | 2 | 4 | 8 = 15
+        assert_eq!(val["decimal"].as_str().unwrap(), "15");
+        assert_eq!(val["hex"].as_str().unwrap(), "0xf");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b1111");
+    }
+
+    #[test]
+    fn test_bitwise_and_chain() {
+        let tool = CalcTool {
+            expression: "255 & 127 & 63".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        // 255 & 127 & 63 = 63
+        assert_eq!(val["decimal"].as_str().unwrap(), "63");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x3f");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b111111");
+    }
+
+    #[test]
+    fn test_bitwise_zero_operands() {
+        let tool = CalcTool {
+            expression: "0 & 255".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        assert_eq!(val["decimal"].as_str().unwrap(), "0");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x0");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b0");
+    }
+
+    #[test]
+    fn test_bitwise_with_modulo() {
+        let tool = CalcTool {
+            expression: "17 % 5 & 3".to_string(),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        // 17 % 5 = 2, 2 & 3 = 2
+        assert_eq!(val["decimal"].as_str().unwrap(), "2");
+        assert_eq!(val["hex"].as_str().unwrap(), "0x2");
+        assert_eq!(val["binary"].as_str().unwrap(), "0b10");
     }
 }
