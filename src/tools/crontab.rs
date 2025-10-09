@@ -1,30 +1,36 @@
 use crate::tool::{Output, Tool};
 use anyhow::Context;
 use chrono::{DateTime, FixedOffset, Utc};
-use clap::{Command, CommandFactory, Parser};
+use clap::{Command, CommandFactory, Parser, Subcommand};
 use cron::Schedule;
 use serde_json::json;
 use std::str::FromStr;
 
 #[derive(Parser, Debug)]
-#[command(
-    name = "cron",
-    about = "Parse crontab expression and show upcoming firing times"
-)]
+#[command(name = "cron", about = "Cron utilities for scheduling and parsing")]
+pub struct CronTool {
+    #[command(subcommand)]
+    command: CrontabCommand,
+}
+
 /// TODO:
 /// 1. Support --before
 /// 2. Output in a different timezone
-pub struct CronTool {
-    /// Crontab expression (e.g., "0 9 * * 1-5" for weekdays at 9 AM, or "0 0 9 * * 1-5" for extended format)
-    pub expression: String,
+#[derive(Subcommand, Debug)]
+enum CrontabCommand {
+    /// Parse crontab expression and show upcoming firing times
+    Schedule {
+        /// Crontab expression (e.g., "0 9 * * 1-5" for weekdays at 9 AM, or "0 0 9 * * 1-5" for extended format)
+        expression: String,
 
-    /// Number of upcoming firing times to show (default: 5)
-    #[arg(short = 'n', long = "count", default_value = "5")]
-    pub count: usize,
+        /// Number of upcoming firing times to show (default: 5)
+        #[arg(short = 'n', long = "count", default_value = "5")]
+        count: usize,
 
-    /// Calculate firing times after this time (ISO 8601 format, defaults to now)
-    #[arg(short = 'a', long = "after")]
-    pub after: Option<String>,
+        /// Calculate firing times after this time (ISO 8601 format, defaults to now)
+        #[arg(short = 'a', long = "after")]
+        after: Option<String>,
+    },
 }
 
 impl Tool for CronTool {
@@ -33,36 +39,48 @@ impl Tool for CronTool {
     }
 
     fn execute(&self) -> anyhow::Result<Option<Output>> {
-        // Try to parse as-is first, then try adding seconds if it fails
-        let schedule = Schedule::from_str(&self.expression)
-            .or_else(|_| {
-                // If parsing fails, try adding "0 " at the beginning for traditional 5-field format
-                let extended_expr = format!("0 {}", self.expression);
-                Schedule::from_str(&extended_expr)
-            })
-            .context(
-                "Invalid crontab expression. Use format like '0 9 * * 1-5' or '0 0 9 * * 1-5'",
-            )?;
-
-        let (after_utc, offset) = match &self.after {
-            Some(time_str) => {
-                let parsed = DateTime::parse_from_rfc3339(time_str).context(
-                    "Invalid after time format. Use ISO 8601 format (e.g., 2024-01-01T00:00:00Z)",
-                )?;
-                let offset = parsed.timezone();
-                (parsed.with_timezone(&Utc), offset)
-            }
-            None => {
-                let now = Utc::now();
-                let offset = FixedOffset::east_opt(0).unwrap(); // UTC has offset 0
-                (now, offset)
-            }
-        };
-
-        Ok(Some(Output::JsonValue(json!(get_upcoming_times(
-            &schedule, after_utc, offset, self.count
-        )?))))
+        match &self.command {
+            CrontabCommand::Schedule {
+                expression,
+                count,
+                after,
+            } => execute_schedule(expression, *count, after.as_ref()),
+        }
     }
+}
+
+fn execute_schedule(
+    expression: &str,
+    count: usize,
+    after: Option<&String>,
+) -> anyhow::Result<Option<Output>> {
+    // Try to parse as-is first, then try adding seconds if it fails
+    let schedule = Schedule::from_str(expression)
+        .or_else(|_| {
+            // If parsing fails, try adding "0 " at the beginning for traditional 5-field format
+            let extended_expr = format!("0 {}", expression);
+            Schedule::from_str(&extended_expr)
+        })
+        .context("Invalid crontab expression. Use format like '0 9 * * 1-5' or '0 0 9 * * 1-5'")?;
+
+    let (after_utc, offset) = match after {
+        Some(time_str) => {
+            let parsed = DateTime::parse_from_rfc3339(time_str).context(
+                "Invalid after time format. Use ISO 8601 format (e.g., 2024-01-01T00:00:00Z)",
+            )?;
+            let offset = parsed.timezone();
+            (parsed.with_timezone(&Utc), offset)
+        }
+        None => {
+            let now = Utc::now();
+            let offset = FixedOffset::east_opt(0).unwrap(); // UTC has offset 0
+            (now, offset)
+        }
+    };
+
+    Ok(Some(Output::JsonValue(json!(get_upcoming_times(
+        &schedule, after_utc, offset, count
+    )?))))
 }
 
 fn get_upcoming_times(
@@ -90,9 +108,11 @@ mod tests {
     #[test]
     fn test_parse_simple_cron() {
         let tool = CronTool {
-            expression: "0 9 * * 1-5".to_string(),
-            count: 3,
-            after: Some("2024-01-01T00:00:00Z".to_string()),
+            command: CrontabCommand::Schedule {
+                expression: "0 9 * * 1-5".to_string(),
+                count: 3,
+                after: Some("2024-01-01T00:00:00Z".to_string()),
+            },
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -112,9 +132,11 @@ mod tests {
     #[test]
     fn test_parse_daily_cron() {
         let tool = CronTool {
-            expression: "0 0 * * *".to_string(),
-            count: 2,
-            after: Some("2024-01-01T00:00:00Z".to_string()),
+            command: CrontabCommand::Schedule {
+                expression: "0 0 * * *".to_string(),
+                count: 2,
+                after: Some("2024-01-01T00:00:00Z".to_string()),
+            },
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -133,9 +155,11 @@ mod tests {
     #[test]
     fn test_parse_hourly_cron() {
         let tool = CronTool {
-            expression: "0 * * * *".to_string(),
-            count: 5,
-            after: Some("2024-01-01T00:00:00Z".to_string()),
+            command: CrontabCommand::Schedule {
+                expression: "0 * * * *".to_string(),
+                count: 5,
+                after: Some("2024-01-01T00:00:00Z".to_string()),
+            },
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -157,9 +181,11 @@ mod tests {
     #[test]
     fn test_parse_with_after_time() {
         let tool = CronTool {
-            expression: "0 9 * * 1-5".to_string(),
-            count: 2,
-            after: Some("2024-03-15T10:00:00Z".to_string()),
+            command: CrontabCommand::Schedule {
+                expression: "0 9 * * 1-5".to_string(),
+                count: 2,
+                after: Some("2024-03-15T10:00:00Z".to_string()),
+            },
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -178,9 +204,11 @@ mod tests {
     #[test]
     fn test_parse_invalid_expression() {
         let tool = CronTool {
-            expression: "invalid".to_string(),
-            count: 5,
-            after: None,
+            command: CrontabCommand::Schedule {
+                expression: "invalid".to_string(),
+                count: 5,
+                after: None,
+            },
         };
         let result = tool.execute();
 
@@ -190,9 +218,11 @@ mod tests {
     #[test]
     fn test_parse_invalid_after_time() {
         let tool = CronTool {
-            expression: "0 9 * * 1-5".to_string(),
-            count: 5,
-            after: Some("invalid-time".to_string()),
+            command: CrontabCommand::Schedule {
+                expression: "0 9 * * 1-5".to_string(),
+                count: 5,
+                after: Some("invalid-time".to_string()),
+            },
         };
         let result = tool.execute();
 
@@ -202,9 +232,11 @@ mod tests {
     #[test]
     fn test_timezone_preserved() {
         let tool = CronTool {
-            expression: "0 9 * * 1-5".to_string(),
-            count: 2,
-            after: Some("2024-01-01T00:00:00+05:30".to_string()),
+            command: CrontabCommand::Schedule {
+                expression: "0 9 * * 1-5".to_string(),
+                count: 2,
+                after: Some("2024-01-01T00:00:00+05:30".to_string()),
+            },
         };
         let result = tool.execute().unwrap().unwrap();
 

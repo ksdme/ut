@@ -336,13 +336,9 @@ Display Unicode symbol reference table.
 ut unicode
 ```
 
-## Features
+## Nice to have
 
-- **Fast**: Built in Rust for optimal performance
-- **Standalone**: Single binary with no runtime dependencies
-- **Composable**: Tools work with stdin/stdout for easy piping
-- **Secure**: Uses cryptographically secure random number generators where appropriate
-- **Cross-platform**: Works on Linux, macOS, and Windows
+- crontab explainer
 
 ## Development
 
