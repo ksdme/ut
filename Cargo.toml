@@ -1,6 +1,6 @@
 [package]
 name = "ut"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2024"
 description = "A utility toolkit of most commonly used tools by software developers and IT professionals"
 homepage = "https://github.com/ksdme/ut"
