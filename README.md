@@ -96,6 +96,7 @@ Run `ut --help` to see all available tools, or `ut <TOOL> --help` for specific t
 │   ├── json        - JSON builder and utilities
 │   │   └── builder
 │   ├── regex       - Interactive regex tester
+│   ├── cron        - Parse cron expressions
 │   └── datetime (dt) - Parse and convert datetimes
 ├── Web & Network
 │   ├── http        - HTTP utilities
@@ -256,6 +257,19 @@ Interactive regex tester with live highlighting.
 ```bash
 ut regex
 ut regex --test sample.txt
+```
+
+#### `cron`
+Parse crontab expressions and show upcoming firing times.
+- Support for traditional 5-field cron expressions
+- Support for extended 6-field cron expressions (with seconds)
+- Configurable number of results with --n / --count
+- Configurable start time with --s / --start
+
+```bash
+ut cron "0 9 * * 1-5"
+ut cron "0 0 * * *" --count 3
+ut cron "0 9 * * 1-5" --start "2024-01-01T00:00:00Z"
 ```
 
 #### `datetime` (alias: `dt`)
