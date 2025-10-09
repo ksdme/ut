@@ -61,14 +61,17 @@ Run `ut --help` to see all available tools, or `ut <TOOL> --help` for specific t
 │   └── url         - URL encode/decode
 │       ├── encode
 │       └── decode
-├── Hashing
-│   └── hash        - Cryptographic hash digests
-│       ├── md5
-│       ├── sha1
-│       ├── sha224
-│       ├── sha256
-│       ├── sha384
-│       └── sha512
+├── Hashing & Security
+│   ├── hash        - Cryptographic hash digests
+│   │   ├── md5
+│   │   ├── sha1
+│   │   ├── sha224
+│   │   ├── sha256
+│   │   ├── sha384
+│   │   └── sha512
+│   └── bcrypt      - Password hashing and verification
+│       ├── hash
+│       └── verify
 ├── Data Generation
 │   ├── uuid        - Generate UUIDs
 │   │   ├── v1
@@ -132,7 +135,7 @@ ut url encode "hello world"
 ut url decode "hello%20world"
 ```
 
-### Hashing
+### Hashing & Security
 
 #### `hash`
 Generate cryptographic hash digests using various algorithms.
@@ -142,6 +145,22 @@ Generate cryptographic hash digests using various algorithms.
 ```bash
 ut hash sha256 "hello world"
 ut hash md5 - < file.txt
+```
+
+#### `bcrypt`
+Hash and verify passwords using the bcrypt algorithm.
+- Secure password hashing with configurable cost factor
+- Built-in salt generation for each hash
+- Verification returns "valid" or "invalid"
+- Cost factor range: 4-31 (default: 12, higher = more secure but slower)
+
+```bash
+# Hash a password with default cost (12)
+ut bcrypt hash "mypassword"
+
+# Wrong password verification
+ut bcrypt verify "wrongpassword" '$2b$12$...'
+# Output: invalid
 ```
 
 ### Data Generation
