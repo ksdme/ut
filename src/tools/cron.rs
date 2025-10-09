@@ -11,6 +11,9 @@ use std::str::FromStr;
     name = "cron",
     about = "Parse crontab expression and show upcoming firing times"
 )]
+/// TODO:
+/// 1. Support --before
+/// 2. Output in a different timezone
 pub struct CronTool {
     /// Crontab expression (e.g., "0 9 * * 1-5" for weekdays at 9 AM, or "0 0 9 * * 1-5" for extended format)
     pub expression: String,
