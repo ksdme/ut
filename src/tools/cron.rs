@@ -1,6 +1,6 @@
 use crate::tool::{Output, Tool};
 use anyhow::Context;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, FixedOffset, Utc};
 use clap::{Command, CommandFactory, Parser};
 use cron::Schedule;
 use serde_json::json;
@@ -19,9 +19,9 @@ pub struct CronTool {
     #[arg(short = 'n', long = "count", default_value = "5")]
     pub count: usize,
 
-    /// Start time for calculating next firing times (ISO 8601 format, defaults to now)
-    #[arg(short = 's', long = "start")]
-    pub start_time: Option<String>,
+    /// Calculate firing times after this time (ISO 8601 format, defaults to now)
+    #[arg(short = 'a', long = "after")]
+    pub after: Option<String>,
 }
 
 impl Tool for CronTool {
@@ -41,40 +41,40 @@ impl Tool for CronTool {
                 "Invalid crontab expression. Use format like '0 9 * * 1-5' or '0 0 9 * * 1-5'",
             )?;
 
-        let start = parse_start_time(&self.start_time)?;
-        let upcoming_times = get_upcoming_times(&schedule, start, self.count)?;
+        let (after_utc, offset) = match &self.after {
+            Some(time_str) => {
+                let parsed = DateTime::parse_from_rfc3339(time_str).context(
+                    "Invalid after time format. Use ISO 8601 format (e.g., 2024-01-01T00:00:00Z)",
+                )?;
+                let offset = parsed.timezone();
+                (parsed.with_timezone(&Utc), offset)
+            }
+            None => {
+                let now = Utc::now();
+                let offset = FixedOffset::east_opt(0).unwrap(); // UTC has offset 0
+                (now, offset)
+            }
+        };
 
-        let mut result_obj = serde_json::Map::new();
-        result_obj.insert("expression".to_string(), json!(self.expression));
-
-        // Add each upcoming time as a separate numbered field
-        for (i, time) in upcoming_times.iter().enumerate() {
-            result_obj.insert(format!("next_{}", i + 1), json!(time));
-        }
-
-        Ok(Some(Output::JsonValue(json!(result_obj))))
-    }
-}
-
-fn parse_start_time(start_time: &Option<String>) -> anyhow::Result<DateTime<Utc>> {
-    match start_time {
-        Some(time_str) => Ok(DateTime::parse_from_rfc3339(time_str)
-            .context("Invalid start time format. Use ISO 8601 format (e.g., 2024-01-01T00:00:00Z)")?
-            .with_timezone(&Utc)),
-        None => Ok(Utc::now()),
+        Ok(Some(Output::JsonValue(json!(get_upcoming_times(
+            &schedule, after_utc, offset, self.count
+        )?))))
     }
 }
 
 fn get_upcoming_times(
     schedule: &Schedule,
-    start: DateTime<Utc>,
+    after: DateTime<Utc>,
+    offset: FixedOffset,
     count: usize,
 ) -> anyhow::Result<Vec<String>> {
     let upcoming_times: Vec<String> = schedule
-        .upcoming(Utc)
-        .skip_while(|dt| *dt <= start)
+        .after(&after)
         .take(count)
-        .map(|dt| dt.format("%Y-%m-%d %H:%M:%S UTC").to_string())
+        .map(|dt| {
+            let dt_with_offset = dt.with_timezone(&offset);
+            dt_with_offset.to_rfc3339()
+        })
         .collect();
 
     Ok(upcoming_times)
@@ -89,7 +89,7 @@ mod tests {
         let tool = CronTool {
             expression: "0 9 * * 1-5".to_string(),
             count: 3,
-            start_time: None,
+            after: Some("2024-01-01T00:00:00Z".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -97,10 +97,13 @@ mod tests {
             unreachable!()
         };
 
-        assert!(val["expression"].as_str().unwrap() == "0 9 * * 1-5");
-        assert!(val["next_1"].as_str().is_some());
-        assert!(val["next_2"].as_str().is_some());
-        assert!(val["next_3"].as_str().is_some());
+        let arr = val.as_array().unwrap();
+        assert_eq!(arr.len(), 3);
+
+        // 2024-01-01 was Monday, so next 3 weekdays at 9 AM are Jan 1, 2, 3
+        assert_eq!(arr[0].as_str().unwrap(), "2024-01-01T09:00:00+00:00");
+        assert_eq!(arr[1].as_str().unwrap(), "2024-01-02T09:00:00+00:00");
+        assert_eq!(arr[2].as_str().unwrap(), "2024-01-03T09:00:00+00:00");
     }
 
     #[test]
@@ -108,7 +111,7 @@ mod tests {
         let tool = CronTool {
             expression: "0 0 * * *".to_string(),
             count: 2,
-            start_time: None,
+            after: Some("2024-01-01T00:00:00Z".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -116,9 +119,12 @@ mod tests {
             unreachable!()
         };
 
-        assert!(val["expression"].as_str().unwrap() == "0 0 * * *");
-        assert!(val["next_1"].as_str().is_some());
-        assert!(val["next_2"].as_str().is_some());
+        let arr = val.as_array().unwrap();
+        assert_eq!(arr.len(), 2);
+
+        // Daily at midnight, starting from 2024-01-01
+        assert_eq!(arr[0].as_str().unwrap(), "2024-01-02T00:00:00+00:00");
+        assert_eq!(arr[1].as_str().unwrap(), "2024-01-03T00:00:00+00:00");
     }
 
     #[test]
@@ -126,7 +132,7 @@ mod tests {
         let tool = CronTool {
             expression: "0 * * * *".to_string(),
             count: 5,
-            start_time: None,
+            after: Some("2024-01-01T00:00:00Z".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -134,20 +140,23 @@ mod tests {
             unreachable!()
         };
 
-        assert!(val["expression"].as_str().unwrap() == "0 * * * *");
-        assert!(val["next_1"].as_str().is_some());
-        assert!(val["next_2"].as_str().is_some());
-        assert!(val["next_3"].as_str().is_some());
-        assert!(val["next_4"].as_str().is_some());
-        assert!(val["next_5"].as_str().is_some());
+        let arr = val.as_array().unwrap();
+        assert_eq!(arr.len(), 5);
+
+        // Hourly starting from 2024-01-01 00:00:00
+        assert_eq!(arr[0].as_str().unwrap(), "2024-01-01T01:00:00+00:00");
+        assert_eq!(arr[1].as_str().unwrap(), "2024-01-01T02:00:00+00:00");
+        assert_eq!(arr[2].as_str().unwrap(), "2024-01-01T03:00:00+00:00");
+        assert_eq!(arr[3].as_str().unwrap(), "2024-01-01T04:00:00+00:00");
+        assert_eq!(arr[4].as_str().unwrap(), "2024-01-01T05:00:00+00:00");
     }
 
     #[test]
-    fn test_parse_with_start_time() {
+    fn test_parse_with_after_time() {
         let tool = CronTool {
             expression: "0 9 * * 1-5".to_string(),
             count: 2,
-            start_time: Some("2024-01-01T00:00:00Z".to_string()),
+            after: Some("2024-03-15T10:00:00Z".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -155,9 +164,12 @@ mod tests {
             unreachable!()
         };
 
-        assert!(val["expression"].as_str().unwrap() == "0 9 * * 1-5");
-        assert!(val["next_1"].as_str().is_some());
-        assert!(val["next_2"].as_str().is_some());
+        let arr = val.as_array().unwrap();
+        assert_eq!(arr.len(), 2);
+
+        // 2024-03-15 is Friday at 10:00, next weekdays at 9 AM are Mar 17 (Sun), Mar 18 (Mon)
+        assert_eq!(arr[0].as_str().unwrap(), "2024-03-17T09:00:00+00:00");
+        assert_eq!(arr[1].as_str().unwrap(), "2024-03-18T09:00:00+00:00");
     }
 
     #[test]
@@ -165,7 +177,7 @@ mod tests {
         let tool = CronTool {
             expression: "invalid".to_string(),
             count: 5,
-            start_time: None,
+            after: None,
         };
         let result = tool.execute();
 
@@ -173,14 +185,35 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_invalid_start_time() {
+    fn test_parse_invalid_after_time() {
         let tool = CronTool {
             expression: "0 9 * * 1-5".to_string(),
             count: 5,
-            start_time: Some("invalid-time".to_string()),
+            after: Some("invalid-time".to_string()),
         };
         let result = tool.execute();
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_timezone_preserved() {
+        let tool = CronTool {
+            expression: "0 9 * * 1-5".to_string(),
+            count: 2,
+            after: Some("2024-01-01T00:00:00+05:30".to_string()),
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+
+        let arr = val.as_array().unwrap();
+        assert_eq!(arr.len(), 2);
+
+        // Times should be in +05:30 timezone (IST)
+        assert_eq!(arr[0].as_str().unwrap(), "2024-01-01T14:30:00+05:30");
+        assert_eq!(arr[1].as_str().unwrap(), "2024-01-02T14:30:00+05:30");
     }
 }
