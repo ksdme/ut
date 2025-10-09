@@ -44,6 +44,8 @@ tui-textarea = "0.6"
 jiff = "0.1"
 tabled = "0.18"
 nom-language = "0.1.0"
+cron = "0.12.1"
+chrono = "0.4.42"
 
 # The profile that 'dist' will build with
 [profile.dist]
