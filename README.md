@@ -99,7 +99,7 @@ Run `ut --help` to see all available tools, or `ut <TOOL> --help` for specific t
 │   ├── json        - JSON builder and utilities
 │   │   └── builder
 │   ├── regex       - Interactive regex tester
-│   ├── cron        - Cron utilities
+│   ├── crontab     - Cron utilities
 │   │   └── schedule
 │   └── datetime (dt) - Parse and convert datetimes
 ├── Web & Network
@@ -279,7 +279,7 @@ ut regex
 ut regex --test sample.txt
 ```
 
-#### `cron`
+#### `crontab`
 Parse crontab expressions and show upcoming firing times.
 - Support for traditional 5-field cron expressions
 - Support for extended 6-field cron expressions (with seconds)
@@ -287,9 +287,9 @@ Parse crontab expressions and show upcoming firing times.
 - Configurable start time with -a / --after
 
 ```bash
-ut cron schedule "0 9 * * 1-5"
-ut cron schedule "0 0 * * *" --count 3
-ut cron schedule "0 9 * * 1-5" --after "2024-01-01T00:00:00Z"
+ut crontab schedule "0 9 * * 1-5"
+ut crontab schedule "0 0 * * *" --count 3
+ut crontab schedule "0 9 * * 1-5" --after "2024-01-01T00:00:00Z"
 ```
 
 #### `datetime` (alias: `dt`)

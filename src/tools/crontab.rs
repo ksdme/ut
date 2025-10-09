@@ -8,7 +8,7 @@ use std::str::FromStr;
 
 #[derive(Parser, Debug)]
 #[command(name = "cron", about = "Cron utilities for scheduling and parsing")]
-pub struct CronTool {
+pub struct CrontabTool {
     #[command(subcommand)]
     command: CrontabCommand,
 }
@@ -33,9 +33,9 @@ enum CrontabCommand {
     },
 }
 
-impl Tool for CronTool {
+impl Tool for CrontabTool {
     fn cli() -> Command {
-        CronTool::command()
+        CrontabTool::command()
     }
 
     fn execute(&self) -> anyhow::Result<Option<Output>> {
@@ -107,7 +107,7 @@ mod tests {
 
     #[test]
     fn test_parse_simple_cron() {
-        let tool = CronTool {
+        let tool = CrontabTool {
             command: CrontabCommand::Schedule {
                 expression: "0 9 * * 1-5".to_string(),
                 count: 3,
@@ -131,7 +131,7 @@ mod tests {
 
     #[test]
     fn test_parse_daily_cron() {
-        let tool = CronTool {
+        let tool = CrontabTool {
             command: CrontabCommand::Schedule {
                 expression: "0 0 * * *".to_string(),
                 count: 2,
@@ -154,7 +154,7 @@ mod tests {
 
     #[test]
     fn test_parse_hourly_cron() {
-        let tool = CronTool {
+        let tool = CrontabTool {
             command: CrontabCommand::Schedule {
                 expression: "0 * * * *".to_string(),
                 count: 5,
@@ -180,7 +180,7 @@ mod tests {
 
     #[test]
     fn test_parse_with_after_time() {
-        let tool = CronTool {
+        let tool = CrontabTool {
             command: CrontabCommand::Schedule {
                 expression: "0 9 * * 1-5".to_string(),
                 count: 2,
@@ -203,7 +203,7 @@ mod tests {
 
     #[test]
     fn test_parse_invalid_expression() {
-        let tool = CronTool {
+        let tool = CrontabTool {
             command: CrontabCommand::Schedule {
                 expression: "invalid".to_string(),
                 count: 5,
@@ -217,7 +217,7 @@ mod tests {
 
     #[test]
     fn test_parse_invalid_after_time() {
-        let tool = CronTool {
+        let tool = CrontabTool {
             command: CrontabCommand::Schedule {
                 expression: "0 9 * * 1-5".to_string(),
                 count: 5,
@@ -231,7 +231,7 @@ mod tests {
 
     #[test]
     fn test_timezone_preserved() {
-        let tool = CronTool {
+        let tool = CrontabTool {
             command: CrontabCommand::Schedule {
                 expression: "0 9 * * 1-5".to_string(),
                 count: 2,

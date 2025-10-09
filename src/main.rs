@@ -71,7 +71,7 @@ fn main() -> anyhow::Result<()> {
         (tools::calc::CalcTool, "calc", "cal"),
         (tools::case::CaseTool, "case",),
         (tools::color::ColorTool, "color",),
-        (tools::crontab::CronTool, "cron",),
+        (tools::crontab::CrontabTool, "crontab", "cron"),
         (tools::datetime::DateTimeTool, "datetime", "dt"),
         (tools::diff::DiffTool, "diff",),
         (tools::hash::HashTool, "hash",),
