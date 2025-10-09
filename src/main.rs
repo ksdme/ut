@@ -3,16 +3,13 @@ mod data;
 mod tool;
 mod tools;
 
-use std::io::{self, Write};
-
+use clap::CommandFactory;
 use clap::FromArgMatches;
-use serde_json::Value;
-use tabled::{
-    Table, Tabled,
-    settings::{Padding, Remove, Style, object::Rows},
-};
+use clap::Parser;
+use clap_complete::{Shell, generate};
+use std::io;
 
-use crate::tool::{Output, Tool};
+use crate::tool::Tool;
 use anyhow::{Context, anyhow};
 
 // This way of building main is not ideal.
@@ -29,7 +26,7 @@ macro_rules! toolbox {
             )*
 
             // Parse args.
-            let matches = $cmd.get_matches();
+            let matches = $cmd.clone().get_matches();
             let (subcommand_name, subcommand_matches) = matches
                 .subcommand()
                 .context("Could not determine subcommand")?;
@@ -46,6 +43,13 @@ macro_rules! toolbox {
                         Ok(output)
                     }
                 )*
+                "completions" => {
+                    Completions::from_arg_matches(subcommand_matches)
+                        .context("Could not initialize the tool")?
+                        .execute(&mut $cmd);
+
+                    Ok(None)
+                }
                 _ => {
                     Err(anyhow!("Unknown subcommand"))
                 }
@@ -57,7 +61,8 @@ macro_rules! toolbox {
 fn main() -> anyhow::Result<()> {
     let mut cli = clap::builder::Command::new("ut")
         .subcommand_required(true)
-        .arg_required_else_help(true);
+        .arg_required_else_help(true)
+        .subcommand(Completions::command().name("completions"));
 
     let output = toolbox!(
         cli,
@@ -86,72 +91,19 @@ fn main() -> anyhow::Result<()> {
     .context("Could not run tool")?;
 
     match output {
-        Some(Output::Bytes(bytes)) => {
-            io::stdout()
-                .write_all(&bytes)
-                .context("Could not write bytes to stdout")?;
-        }
-        Some(Output::JsonValue(value)) => {
-            print_json_value(&value)?;
-        }
-        Some(Output::Text(text)) => {
-            println!("{}", text);
-        }
-        None => {}
+        Some(output) => output.flush(),
+        None => Ok(()),
     }
-
-    Ok(())
 }
 
-fn print_json_value(value: &Value) -> anyhow::Result<()> {
-    match value {
-        Value::Object(obj) => {
-            if obj.is_empty() {
-                println!("{{}}");
-                return Ok(());
-            }
-
-            #[derive(Tabled)]
-            struct KeyValue {
-                key: String,
-                value: String,
-            }
-
-            let rows: Vec<KeyValue> = obj
-                .iter()
-                .map(|(k, v)| KeyValue {
-                    key: k.clone(),
-                    value: value_to_string(v),
-                })
-                .collect();
-
-            let mut table = Table::new(rows);
-            table
-                .with(Style::empty())
-                .with(Remove::row(Rows::first()))
-                .with(Padding::new(0, 1, 0, 0));
-
-            println!("{}", table);
-        }
-
-        Value::Array(arr) => {
-            for elem in arr {
-                print_json_value(elem)?;
-            }
-        }
-
-        _ => println!("{}", value_to_string(value)),
-    }
-
-    Ok(())
+#[derive(Parser, Debug)]
+#[command(name = "completions", about = "Generate shell completions for ut")]
+struct Completions {
+    shell: Shell,
 }
 
-fn value_to_string(value: &Value) -> String {
-    match value {
-        Value::Null => "null".to_string(),
-        Value::Bool(b) => b.to_string(),
-        Value::Number(n) => n.to_string(),
-        Value::String(s) => s.clone(),
-        _ => serde_json::to_string(value).unwrap_or_default(),
+impl Completions {
+    fn execute(&self, cli: &mut clap::Command) {
+        generate(self.shell, cli, "ut", &mut io::stdout());
     }
 }
