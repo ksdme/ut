@@ -17,7 +17,7 @@ brew install ksdme/tap/ut
 <summary>Install on <b>Linux</b> or macOS via shell script</summary>
 
 ```bash
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ksdme/ut/releases/download/v0.2.0/ut-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ksdme/ut/releases/latest/download/ut-installer.sh | sh
 ```
 
 </details>
@@ -26,7 +26,7 @@ curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ksdme/ut/releases/downl
 <summary>Install prebuilt binaries on <b>Windows</b> via powershell</summary>
 
 ```powershell
-powershell -ExecutionPolicy Bypass -c "irm https://github.com/ksdme/ut/releases/download/v0.2.0/ut-installer.ps1 | iex"
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/ksdme/ut/releases/latest/download/ut-installer.ps1 | iex"
 ```
 
 </details>
