@@ -1,3 +1,4 @@
+use crate::args::StringInput;
 use crate::tool::{Output, Tool};
 use anyhow::{Context, Result};
 use clap::{Command, CommandFactory, Parser, Subcommand};
@@ -15,8 +16,8 @@ pub struct ColorTool {
 enum ColorCommand {
     /// Convert colors between different formats
     Convert {
-        /// Color value in any supported format (hex, rgb, rgba, hsl, hwb, cmyk, lch, oklch)
-        color: String,
+        /// Color value in any supported format (use "-" for stdin, e.g., hex, rgb, rgba, hsl, hwb, cmyk, lch, oklch)
+        color: StringInput,
     },
 }
 
@@ -28,7 +29,7 @@ impl Tool for ColorTool {
     fn execute(&self) -> Result<Option<Output>> {
         match &self.command {
             ColorCommand::Convert { color } => {
-                let color = color.parse::<Color>().context("Failed to parse color")?;
+                let color = color.as_ref().parse::<Color>().context("Failed to parse color")?;
 
                 let [r, g, b, _] = color.to_rgba8();
                 let [_, _, _, a_f] = color.to_array();

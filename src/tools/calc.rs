@@ -1,3 +1,4 @@
+use crate::args::StringInput;
 use crate::tool::{Output, Tool};
 use anyhow::{Result, anyhow};
 use clap::{Command, CommandFactory, Parser};
@@ -19,9 +20,9 @@ use serde_json::json;
 #[derive(Parser, Debug)]
 #[command(name = "calc", about = "Expression calculator with math functions")]
 pub struct CalcTool {
-    /// Expression to evaluate
+    /// Expression to evaluate (use "-" for stdin)
     /// Supports arithmetic, functions, constants, and multiple number formats
-    expression: String,
+    expression: StringInput,
 }
 
 impl Tool for CalcTool {
@@ -34,7 +35,7 @@ impl Tool for CalcTool {
     /// Returns the result formatted in decimal, binary, and hexadecimal
     fn execute(&self) -> Result<Option<Output>> {
         // Parse and evaluate the mathematical expression
-        let result = evaluate_expression(&self.expression)?;
+        let result = evaluate_expression(self.expression.as_ref())?;
 
         // Format the result in multiple number bases
         let output = json!({
@@ -442,11 +443,12 @@ fn format_hex(value: Decimal) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::args::StringInput;
 
     #[test]
     fn test_addition() {
         let tool = CalcTool {
-            expression: "2 + 3".to_string(),
+            expression: StringInput("2 + 3".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -461,7 +463,7 @@ mod tests {
     #[test]
     fn test_subtraction() {
         let tool = CalcTool {
-            expression: "10 - 7".to_string(),
+            expression: StringInput("10 - 7".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -476,7 +478,7 @@ mod tests {
     #[test]
     fn test_multiplication() {
         let tool = CalcTool {
-            expression: "4 * 5".to_string(),
+            expression: StringInput("4 * 5".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -491,7 +493,7 @@ mod tests {
     #[test]
     fn test_division() {
         let tool = CalcTool {
-            expression: "20 / 4".to_string(),
+            expression: StringInput("20 / 4".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -506,7 +508,7 @@ mod tests {
     #[test]
     fn test_float_division() {
         let tool = CalcTool {
-            expression: "7 / 2".to_string(),
+            expression: StringInput("7 / 2".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -521,7 +523,7 @@ mod tests {
     #[test]
     fn test_modulo() {
         let tool = CalcTool {
-            expression: "10 % 3".to_string(),
+            expression: StringInput("10 % 3".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -536,7 +538,7 @@ mod tests {
     #[test]
     fn test_exponentiation() {
         let tool = CalcTool {
-            expression: "2 ^ 8".to_string(),
+            expression: StringInput("2 ^ 8".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -551,7 +553,7 @@ mod tests {
     #[test]
     fn test_complex_expression() {
         let tool = CalcTool {
-            expression: "(2 + 3) * 4 - 6 / 2".to_string(),
+            expression: StringInput("(2 + 3) * 4 - 6 / 2".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -566,7 +568,7 @@ mod tests {
     #[test]
     fn test_nested_parentheses() {
         let tool = CalcTool {
-            expression: "((10 + 5) * 2) / 3".to_string(),
+            expression: StringInput("((10 + 5) * 2) / 3".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -581,7 +583,7 @@ mod tests {
     #[test]
     fn test_negative_numbers() {
         let tool = CalcTool {
-            expression: "-5 + 10".to_string(),
+            expression: StringInput("-5 + 10".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -596,7 +598,7 @@ mod tests {
     #[test]
     fn test_decimal_numbers() {
         let tool = CalcTool {
-            expression: "3.14 * 2".to_string(),
+            expression: StringInput("3.14 * 2".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -611,7 +613,7 @@ mod tests {
     #[test]
     fn test_hex_input() {
         let tool = CalcTool {
-            expression: "0xFF + 1".to_string(),
+            expression: StringInput("0xFF + 1".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -626,7 +628,7 @@ mod tests {
     #[test]
     fn test_binary_input() {
         let tool = CalcTool {
-            expression: "0b1010 + 0b0101".to_string(),
+            expression: StringInput("0b1010 + 0b0101".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -641,7 +643,7 @@ mod tests {
     #[test]
     fn test_hex_output() {
         let tool = CalcTool {
-            expression: "255".to_string(),
+            expression: StringInput("255".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -656,7 +658,7 @@ mod tests {
     #[test]
     fn test_binary_output() {
         let tool = CalcTool {
-            expression: "15".to_string(),
+            expression: StringInput("15".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -671,7 +673,7 @@ mod tests {
     #[test]
     fn test_sqrt_function() {
         let tool = CalcTool {
-            expression: "sqrt(16)".to_string(),
+            expression: StringInput("sqrt(16)".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -686,7 +688,7 @@ mod tests {
     #[test]
     fn test_abs_function() {
         let tool = CalcTool {
-            expression: "abs(-42)".to_string(),
+            expression: StringInput("abs(-42)".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -701,7 +703,7 @@ mod tests {
     #[test]
     fn test_floor_function() {
         let tool = CalcTool {
-            expression: "floor(3.7)".to_string(),
+            expression: StringInput("floor(3.7)".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -716,7 +718,7 @@ mod tests {
     #[test]
     fn test_ceil_function() {
         let tool = CalcTool {
-            expression: "ceil(3.2)".to_string(),
+            expression: StringInput("ceil(3.2)".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -731,7 +733,7 @@ mod tests {
     #[test]
     fn test_round_function() {
         let tool = CalcTool {
-            expression: "round(3.6)".to_string(),
+            expression: StringInput("round(3.6)".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -746,7 +748,7 @@ mod tests {
     #[test]
     fn test_pi_constant() {
         let tool = CalcTool {
-            expression: "pi * 2".to_string(),
+            expression: StringInput("pi * 2".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -762,7 +764,7 @@ mod tests {
     #[test]
     fn test_e_constant() {
         let tool = CalcTool {
-            expression: "e".to_string(),
+            expression: StringInput("e".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -778,7 +780,7 @@ mod tests {
     #[test]
     fn test_invalid_expression() {
         let tool = CalcTool {
-            expression: "2 + * 3".to_string(),
+            expression: StringInput("2 + * 3".to_string()),
         };
         let result = tool.execute();
 
@@ -788,7 +790,7 @@ mod tests {
     #[test]
     fn test_division_by_zero() {
         let tool = CalcTool {
-            expression: "5 / 0".to_string(),
+            expression: StringInput("5 / 0".to_string()),
         };
         let result = tool.execute();
 
@@ -798,7 +800,7 @@ mod tests {
     #[test]
     fn test_sqrt_negative() {
         let tool = CalcTool {
-            expression: "sqrt(-1)".to_string(),
+            expression: StringInput("sqrt(-1)".to_string()),
         };
         let result = tool.execute();
 
@@ -808,7 +810,7 @@ mod tests {
     #[test]
     fn test_bitwise_and() {
         let tool = CalcTool {
-            expression: "12 & 10".to_string(),
+            expression: StringInput("12 & 10".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -824,7 +826,7 @@ mod tests {
     #[test]
     fn test_bitwise_or() {
         let tool = CalcTool {
-            expression: "12 | 10".to_string(),
+            expression: StringInput("12 | 10".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -840,7 +842,7 @@ mod tests {
     #[test]
     fn test_bitwise_with_hex() {
         let tool = CalcTool {
-            expression: "0xFF & 0x0F".to_string(),
+            expression: StringInput("0xFF & 0x0F".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -855,7 +857,7 @@ mod tests {
     #[test]
     fn test_bitwise_with_binary() {
         let tool = CalcTool {
-            expression: "0b1111 | 0b1000".to_string(),
+            expression: StringInput("0b1111 | 0b1000".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -870,7 +872,7 @@ mod tests {
     #[test]
     fn test_bitwise_precedence() {
         let tool = CalcTool {
-            expression: "8 | 4 & 12".to_string(),
+            expression: StringInput("8 | 4 & 12".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -887,7 +889,7 @@ mod tests {
     #[test]
     fn test_bitwise_with_parentheses() {
         let tool = CalcTool {
-            expression: "(8 | 4) & 12".to_string(),
+            expression: StringInput("(8 | 4) & 12".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -903,7 +905,7 @@ mod tests {
     #[test]
     fn test_bitwise_and_float_error() {
         let tool = CalcTool {
-            expression: "3.5 & 2".to_string(),
+            expression: StringInput("3.5 & 2".to_string()),
         };
         let result = tool.execute();
 
@@ -913,7 +915,7 @@ mod tests {
     #[test]
     fn test_bitwise_or_float_error() {
         let tool = CalcTool {
-            expression: "4 | 2.5".to_string(),
+            expression: StringInput("4 | 2.5".to_string()),
         };
         let result = tool.execute();
 
@@ -923,7 +925,7 @@ mod tests {
     #[test]
     fn test_bitwise_and_negative_error() {
         let tool = CalcTool {
-            expression: "-5 & 3".to_string(),
+            expression: StringInput("-5 & 3".to_string()),
         };
         let result = tool.execute();
 
@@ -933,7 +935,7 @@ mod tests {
     #[test]
     fn test_bitwise_or_negative_error() {
         let tool = CalcTool {
-            expression: "5 | -3".to_string(),
+            expression: StringInput("5 | -3".to_string()),
         };
         let result = tool.execute();
 
@@ -943,7 +945,7 @@ mod tests {
     #[test]
     fn test_bitwise_complex_expression() {
         let tool = CalcTool {
-            expression: "(0xFF & 0x0F) | (0x10 & 0x10)".to_string(),
+            expression: StringInput("(0xFF & 0x0F) | (0x10 & 0x10)".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -959,7 +961,7 @@ mod tests {
     #[test]
     fn test_arithmetic_with_bitwise_and() {
         let tool = CalcTool {
-            expression: "10 + 5 & 12".to_string(),
+            expression: StringInput("10 + 5 & 12".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -975,7 +977,7 @@ mod tests {
     #[test]
     fn test_arithmetic_with_bitwise_or() {
         let tool = CalcTool {
-            expression: "8 - 4 | 2".to_string(),
+            expression: StringInput("8 - 4 | 2".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -991,7 +993,7 @@ mod tests {
     #[test]
     fn test_multiplication_with_bitwise() {
         let tool = CalcTool {
-            expression: "2 * 4 & 7".to_string(),
+            expression: StringInput("2 * 4 & 7".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -1007,7 +1009,7 @@ mod tests {
     #[test]
     fn test_division_with_bitwise() {
         let tool = CalcTool {
-            expression: "16 / 2 | 3".to_string(),
+            expression: StringInput("16 / 2 | 3".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -1023,7 +1025,7 @@ mod tests {
     #[test]
     fn test_bitwise_with_parentheses_arithmetic() {
         let tool = CalcTool {
-            expression: "(10 | 5) + 2".to_string(),
+            expression: StringInput("(10 | 5) + 2".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -1039,7 +1041,7 @@ mod tests {
     #[test]
     fn test_mixed_bitwise_arithmetic() {
         let tool = CalcTool {
-            expression: "3 + 4 & 5 | 2".to_string(),
+            expression: StringInput("3 + 4 & 5 | 2".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -1055,7 +1057,7 @@ mod tests {
     #[test]
     fn test_bitwise_or_chain() {
         let tool = CalcTool {
-            expression: "1 | 2 | 4 | 8".to_string(),
+            expression: StringInput("1 | 2 | 4 | 8".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -1071,7 +1073,7 @@ mod tests {
     #[test]
     fn test_bitwise_and_chain() {
         let tool = CalcTool {
-            expression: "255 & 127 & 63".to_string(),
+            expression: StringInput("255 & 127 & 63".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -1087,7 +1089,7 @@ mod tests {
     #[test]
     fn test_bitwise_zero_operands() {
         let tool = CalcTool {
-            expression: "0 & 255".to_string(),
+            expression: StringInput("0 & 255".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -1102,7 +1104,7 @@ mod tests {
     #[test]
     fn test_bitwise_with_modulo() {
         let tool = CalcTool {
-            expression: "17 % 5 & 3".to_string(),
+            expression: StringInput("17 % 5 & 3".to_string()),
         };
         let result = tool.execute().unwrap().unwrap();
 
