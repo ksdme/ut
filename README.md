@@ -51,6 +51,37 @@ ut <TOOL> [OPTIONS]
 
 Run `ut --help` to see all available tools, or `ut <TOOL> --help` for specific tool documentation.
 
+### Reading from stdin
+
+Many tools support reading input from stdin by using `-` as the argument. This allows you to pipe data from other commands:
+
+```bash
+# Base64 encoding
+echo -n "hello world" | ut base64 encode -
+
+# URL encoding
+printf "hello world" | ut url encode -
+
+# Hash generation
+echo -n "password" | ut hash sha256 -
+
+# Case conversion
+printf "HELLO WORLD" | ut case lower -
+```
+
+**Important**: Most shell commands like `echo` add a trailing newline to their output. Use `echo -n` or `printf` to avoid including the newline in your input, especially for whitespace-sensitive operations like hashing, datetime parsing, or calculations.
+
+```bash
+# ❌ This includes a newline in the hash
+echo "password" | ut hash sha256 -
+
+# ✅ This hashes only "password" without a newline
+echo -n "password" | ut hash sha256 -
+printf "password" | ut hash sha256 -
+```
+
+**Tools supporting stdin**: `base64`, `url`, `hash`, `bcrypt`, `case`, `qr`, `crontab`, `calc`, `color`, `datetime`
+
 ## Available Tools
 
 ```
