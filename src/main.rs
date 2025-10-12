@@ -97,8 +97,17 @@ fn main() -> anyhow::Result<()> {
 }
 
 #[derive(Parser, Debug)]
-#[command(name = "completions", about = "Generate shell completions for ut")]
+#[command(
+    name = "completions",
+    about = "Generate shell completions for ut",
+    long_about = "Generate shell completion scripts for ut.\n\n\
+                  Supported shells: bash, zsh, fish, elvish, powershell\n\n\
+                  Examples:\n  \
+                  ut completions zsh > ~/.zsh/completions/_ut\n  \
+                  ut completions bash > ~/.local/share/bash-completion/completions/ut"
+)]
 struct Completions {
+    #[arg(value_name = "SHELL", help = "Shell to generate completions for (bash, zsh, fish, elvish, powershell)")]
     shell: Shell,
 }
 
