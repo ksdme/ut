@@ -13,7 +13,7 @@ impl FromStr for StringInput {
         if s == "-" {
             let mut buffer = String::new();
             io::stdin().read_to_string(&mut buffer)?;
-            Ok(StringInput(buffer.trim_end().to_string()))
+            Ok(StringInput(buffer))
         } else if s == r"\-" {
             // Escaped dash becomes literal dash
             Ok(StringInput("-".to_string()))
