@@ -6,7 +6,8 @@ mod tools;
 use clap::CommandFactory;
 use clap::FromArgMatches;
 use clap::Parser;
-use clap_complete::{Shell, generate};
+use clap_complete::generate;
+use clap_complete_nushell::Nushell;
 use std::io;
 
 use crate::tool::Tool;
@@ -103,14 +104,35 @@ fn main() -> anyhow::Result<()> {
     long_about = "Generate shell completion scripts for ut.\n\n\
                   Examples:\n  \
                   ut completions zsh > ~/.zsh/completions/_ut\n  \
-                  ut completions bash > ~/.local/share/bash-completion/completions/ut"
+                  ut completions bash > ~/.local/share/bash-completion/completions/ut\n  \
+                  ut completions nushell > ~/.config/nushell/completions/ut.nu"
 )]
 struct Completions {
     shell: Shell,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+#[value(rename_all = "lowercase")]
+enum Shell {
+    Bash,
+    Elvish,
+    Fish,
+    PowerShell,
+    Zsh,
+    #[value(alias = "nu")]
+    Nushell,
+}
+
 impl Completions {
     fn execute(&self, cli: &mut clap::Command) {
-        generate(self.shell, cli, "ut", &mut io::stdout());
+        let out = &mut io::stdout();
+        match self.shell {
+            Shell::Bash => generate(clap_complete::Shell::Bash, cli, "ut", out),
+            Shell::Elvish => generate(clap_complete::Shell::Elvish, cli, "ut", out),
+            Shell::Fish => generate(clap_complete::Shell::Fish, cli, "ut", out),
+            Shell::PowerShell => generate(clap_complete::Shell::PowerShell, cli, "ut", out),
+            Shell::Zsh => generate(clap_complete::Shell::Zsh, cli, "ut", out),
+            Shell::Nushell => generate(Nushell, cli, "ut", out),
+        }
     }
 }

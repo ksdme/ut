@@ -53,7 +53,7 @@ Run `ut --help` to see all available tools, or `ut <TOOL> --help` for specific t
 
 ### Shell Completions
 
-`ut` supports shell completions for bash, zsh, fish, elvish, and PowerShell. To enable tab completion:
+`ut` supports shell completions for bash, zsh, fish, nushell, elvish, and PowerShell. To enable tab completion:
 
 **Zsh:**
 ```bash
@@ -74,6 +74,13 @@ echo 'eval "$(ut completions bash)"' >> ~/.bashrc
 **Fish:**
 ```bash
 ut completions fish > ~/.config/fish/completions/ut.fish
+```
+
+**Nushell:**
+```bash
+ut completions nushell > ~/.config/nushell/completions/ut.nu
+# Or use the short alias
+ut completions nu > ~/.config/nushell/completions/ut.nu
 ```
 
 **PowerShell:**
