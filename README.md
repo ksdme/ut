@@ -130,6 +130,12 @@ After setting up completions, restart your shell or source your configuration fi
 │   │   ├── v4
 │   │   ├── v5
 │   │   └── v7
+│   ├── ulid        - Generate and manipulate ULIDs
+│   │   ├── generate
+│   │   ├── parse
+│   │   ├── validate
+│   │   ├── to-uuid
+│   │   └── from-uuid
 │   ├── token (secret) - Generate secure random tokens
 │   ├── lorem       - Generate lorem ipsum text
 │   └── random      - Generate random numbers
@@ -230,6 +236,24 @@ ut uuid v4 --count 5
 ut uuid v5 --namespace DNS --name example.com
 ut uuid v7
 ut uuid v7 --count 5
+```
+
+#### `ulid`
+Generate and manipulate ULIDs (Universally Unique Lexicographically Sortable Identifiers).
+- Lexicographically sortable by creation time
+- 26-character Crockford Base32 encoding (vs UUID's 36 characters)
+- 128-bit compatibility with UUIDs
+- Parse to extract timestamp and components
+- Validate ULID strings
+- Convert between ULID and UUID formats
+
+```bash
+ut ulid                    # Generate 1 ULID
+ut ulid -c 5               # Generate 5 ULIDs
+ut ulid parse 01K7FW2PG44QTQZZR09SZCNAEF  # Show timestamp and details
+ut ulid validate 01K7FW2PG44QTQZZR09SZCNAEF  # Check if valid
+ut ulid to-uuid 01K7FW2PG44QTQZZR09SZCNAEF   # Convert to UUID
+ut ulid from-uuid 550e8400-e29b-41d4-a716-446655440000  # UUID to ULID
 ```
 
 #### `token` (alias: `secret`)
