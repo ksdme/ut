@@ -85,6 +85,7 @@ fn main() -> anyhow::Result<()> {
         (tools::regex::RegexTool, "regex",),
         (tools::serve::ServeTool, "serve",),
         (tools::token::TokenTool, "token", "secret"),
+        (tools::ulid::UlidTool, "ulid",),
         (tools::url::UrlTool, "url",),
         (tools::uuid::UUIDTool, "uuid",),
         (tools::unicode::UnicodeTool, "unicode",)
