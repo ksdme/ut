@@ -55,7 +55,9 @@ Run `ut --help` to see all available tools, or `ut <TOOL> --help` for specific t
 
 `ut` supports shell completions for bash, zsh, fish, nushell, elvish, and PowerShell. To enable tab completion:
 
-**Zsh:**
+<details>
+<summary><b>Zsh</b></summary>
+
 ```bash
 # Generate and save completions to your fpath
 ut completions zsh > ~/.zsh/completions/_ut
@@ -64,29 +66,47 @@ ut completions zsh > ~/.zsh/completions/_ut
 echo 'eval "$(ut completions zsh)"' >> ~/.zshrc
 ```
 
-**Bash:**
+</details>
+
+<details>
+<summary><b>Bash</b></summary>
+
 ```bash
 ut completions bash > ~/.local/share/bash-completion/completions/ut
 # Or add to .bashrc
 echo 'eval "$(ut completions bash)"' >> ~/.bashrc
 ```
 
-**Fish:**
+</details>
+
+<details>
+<summary><b>Fish</b></summary>
+
 ```bash
 ut completions fish > ~/.config/fish/completions/ut.fish
 ```
 
-**Nushell:**
+</details>
+
+<details>
+<summary><b>Nushell</b></summary>
+
 ```bash
 ut completions nushell > ~/.config/nushell/completions/ut.nu
 # Or use the short alias
 ut completions nu > ~/.config/nushell/completions/ut.nu
 ```
 
-**PowerShell:**
+</details>
+
+<details>
+<summary><b>PowerShell</b></summary>
+
 ```powershell
 ut completions powershell | Out-File -FilePath $PROFILE -Append
 ```
+
+</details>
 
 After setting up completions, restart your shell or source your configuration file.
 
