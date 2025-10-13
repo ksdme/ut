@@ -43,15 +43,7 @@ cargo install --git https://github.com/ksdme/ut.git
 
 You can also download prebuilt binaries directly from the [releases page](https://github.com/ksdme/ut/releases/).
 
-## Usage
-
-```bash
-ut <TOOL> [OPTIONS]
-```
-
-Run `ut --help` to see all available tools, or `ut <TOOL> --help` for specific tool documentation.
-
-### Shell Completions
+## Shell Completions
 
 `ut` supports shell completions for bash, zsh, fish, nushell, elvish, and PowerShell. To enable tab completion:
 
