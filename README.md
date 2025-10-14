@@ -51,37 +51,6 @@ ut <TOOL> [OPTIONS]
 
 Run `ut --help` to see all available tools, or `ut <TOOL> --help` for specific tool documentation.
 
-### Reading from stdin
-
-Many tools support reading input from stdin by using `-` as the argument. This allows you to pipe data from other commands:
-
-```bash
-# Base64 encoding
-echo -n "hello world" | ut base64 encode -
-
-# URL encoding
-printf "hello world" | ut url encode -
-
-# Hash generation
-echo -n "password" | ut hash sha256 -
-
-# Case conversion
-printf "HELLO WORLD" | ut case lower -
-```
-
-**Important**: Most shell commands like `echo` add a trailing newline to their output. Use `echo -n` or `printf` to avoid including the newline in your input, especially for whitespace-sensitive operations like hashing, datetime parsing, or calculations.
-
-```bash
-# ❌ This includes a newline in the hash
-echo "password" | ut hash sha256 -
-
-# ✅ This hashes only "password" without a newline
-echo -n "password" | ut hash sha256 -
-printf "password" | ut hash sha256 -
-```
-
-**Tools supporting stdin**: `base64`, `url`, `hash`, `bcrypt`, `case`, `qr`, `crontab`, `calc`, `color`, `datetime`
-
 ## Available Tools
 
 ```
@@ -156,6 +125,7 @@ Encode and decode data using Base64 encoding.
 ut base64 encode "hello world"
 ut base64 decode "aGVsbG8gd29ybGQ="
 ut base64 encode --urlsafe "hello world"
+echo -n "hello world" | ut base64 encode -
 ```
 
 #### `url`
@@ -164,6 +134,7 @@ URL encode and decode text.
 ```bash
 ut url encode "hello world"
 ut url decode "hello%20world"
+printf "hello world" | ut url encode -
 ```
 
 ### Hashing & Security
@@ -176,6 +147,7 @@ Generate cryptographic hash digests using various algorithms.
 ```bash
 ut hash sha256 "hello world"
 ut hash md5 - < file.txt
+echo -n "password" | ut hash sha256 -
 ```
 
 #### `bcrypt`
@@ -188,6 +160,7 @@ Hash and verify passwords using the bcrypt algorithm.
 ```bash
 # Hash a password with default cost (12)
 ut bcrypt hash "mypassword"
+echo -n "mypassword" | ut bcrypt hash -
 
 # Wrong password verification
 ut bcrypt verify "wrongpassword" '$2b$12$...'
@@ -251,6 +224,7 @@ Convert text between different case formats.
 ut case lower "Hello World"
 ut case camel "hello_world"
 ut case snake "HelloWorld"
+printf "HELLO WORLD" | ut case lower -
 ```
 
 #### `pretty-print` (alias: `pp`)
@@ -285,6 +259,7 @@ ut calc "2 + 2 * 3"
 ut cal "sin(pi / 2)"
 ut calc "0xFF + 0b1010"
 ut calc "sqrt(16) ^ 2"
+echo -n "2 + 2" | ut calc -
 ```
 
 #### `json`
@@ -321,6 +296,7 @@ Parse crontab expressions and show upcoming firing times.
 ut crontab schedule "0 9 * * 1-5"
 ut crontab schedule "0 0 * * *" --count 3
 ut crontab schedule "0 9 * * 1-5" --after "2024-01-01T00:00:00Z"
+echo -n "0 9 * * 1-5" | ut crontab schedule -
 ```
 
 #### `datetime` (alias: `dt`)
@@ -333,6 +309,7 @@ Parse and convert datetimes between timezones.
 ut datetime now
 ut dt "2025-10-04T15:30:00Z" --target-timezone "Asia/Tokyo"
 ut datetime "October 04, 2025 03:30 PM" --source-timezone UTC --parse-format "MonthName Day2, Year4 Hour12:Minute2 AMPM"
+echo -n "2025-10-04T15:30:00Z" | ut datetime -
 ```
 
 ### Web & Network
@@ -363,6 +340,7 @@ Generate QR codes.
 ```bash
 ut qr "https://example.com"
 ut qr "Hello World" --output qrcode.png
+echo -n "Hello World" | ut qr -
 ```
 
 ### Color & Design
@@ -376,6 +354,7 @@ Color utilities for working with different color formats.
 ut color convert "#FF5733"
 ut color convert "rgb(255, 87, 51)"
 ut color convert "hsl(9, 100%, 60%)"
+printf "#FF5733" | ut color convert -
 ```
 
 ### Reference
