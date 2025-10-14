@@ -21,7 +21,7 @@ pub struct CrontabTool {
 enum CrontabCommand {
     /// Parse crontab expression and show upcoming firing times
     Schedule {
-        /// Crontab expression (use "-" for stdin, e.g., "0 9 * * 1-5" for weekdays at 9 AM, or "0 0 9 * * 1-5" for extended format)
+        /// Crontab expression (e.g., "0 9 * * 1-5" for weekdays at 9 AM, or "0 0 9 * * 1-5" for extended format)
         expression: StringInput,
 
         /// Number of upcoming firing times to show (default: 5)

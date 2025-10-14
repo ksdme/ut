@@ -20,7 +20,7 @@ use serde_json::json;
 #[derive(Parser, Debug)]
 #[command(name = "calc", about = "Expression calculator with math functions")]
 pub struct CalcTool {
-    /// Expression to evaluate (use "-" for stdin)
+    /// Expression to evaluate
     /// Supports arithmetic, functions, constants, and multiple number formats
     expression: StringInput,
 }

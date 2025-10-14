@@ -14,12 +14,12 @@ pub struct UrlTool {
 enum UrlCommand {
     /// URL encode text
     Encode {
-        /// Text to URL encode (use "-" for stdin)
+        /// Text to URL encode
         text: StringInput,
     },
     /// URL decode text
     Decode {
-        /// Text to URL decode (use "-" for stdin)
+        /// Text to URL decode
         text: StringInput,
     },
 }

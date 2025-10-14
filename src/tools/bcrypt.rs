@@ -14,7 +14,7 @@ pub struct BcryptTool {
 enum BcryptCommand {
     /// Hash a password using bcrypt
     Hash {
-        /// Password to hash (use "-" for stdin)
+        /// Password to hash
         password: StringInput,
 
         /// Cost factor (4-31, default: 12). Higher values are more secure but slower
@@ -23,7 +23,7 @@ enum BcryptCommand {
     },
     /// Verify a password against a bcrypt hash
     Verify {
-        /// Password to verify (use "-" for stdin)
+        /// Password to verify
         password: StringInput,
 
         /// Bcrypt hash to verify against
