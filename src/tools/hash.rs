@@ -17,32 +17,32 @@ pub struct HashTool {
 enum HashCommand {
     /// Generate MD5 hash
     Md5 {
-        /// Input to hash
+        /// Input to hash (use "-" for stdin)
         input: StringInput,
     },
     /// Generate SHA-1 hash
     Sha1 {
-        /// Input to hash
+        /// Input to hash (use "-" for stdin)
         input: StringInput,
     },
     /// Generate SHA-224 hash
     Sha224 {
-        /// Input to hash
+        /// Input to hash (use "-" for stdin)
         input: StringInput,
     },
     /// Generate SHA-256 hash
     Sha256 {
-        /// Input to hash
+        /// Input to hash (use "-" for stdin)
         input: StringInput,
     },
     /// Generate SHA-384 hash
     Sha384 {
-        /// Input to hash
+        /// Input to hash (use "-" for stdin)
         input: StringInput,
     },
     /// Generate SHA-512 hash
     Sha512 {
-        /// Input to hash
+        /// Input to hash (use "-" for stdin)
         input: StringInput,
     },
 }

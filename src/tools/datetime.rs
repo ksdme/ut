@@ -19,7 +19,7 @@ use nom::{
     about = "Parse and convert datetime to different timezones"
 )]
 pub struct DateTimeTool {
-    /// DateTime value to parse
+    /// DateTime value to parse (use "-" for stdin)
     ///
     /// Supported formats:
     /// - "now" for current time

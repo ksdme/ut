@@ -13,42 +13,42 @@ pub struct CaseTool {
 enum CaseCommand {
     /// Convert text to lowercase
     Lower {
-        /// Text to convert
+        /// Text to convert (use "-" for stdin)
         text: StringInput,
     },
     /// Convert text to UPPERCASE
     Upper {
-        /// Text to convert
+        /// Text to convert (use "-" for stdin)
         text: StringInput,
     },
     /// Convert text to camelCase
     Camel {
-        /// Text to convert
+        /// Text to convert (use "-" for stdin)
         text: StringInput,
     },
     /// Convert text to Title Case
     Title {
-        /// Text to convert
+        /// Text to convert (use "-" for stdin)
         text: StringInput,
     },
     /// Convert text to CONSTANT_CASE
     Constant {
-        /// Text to convert
+        /// Text to convert (use "-" for stdin)
         text: StringInput,
     },
     /// Convert text to Header-Case
     Header {
-        /// Text to convert
+        /// Text to convert (use "-" for stdin)
         text: StringInput,
     },
     /// Convert text to sentence case
     Sentence {
-        /// Text to convert
+        /// Text to convert (use "-" for stdin)
         text: StringInput,
     },
     /// Convert text to snake_case
     Snake {
-        /// Text to convert
+        /// Text to convert (use "-" for stdin)
         text: StringInput,
     },
 }

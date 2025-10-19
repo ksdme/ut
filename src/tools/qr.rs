@@ -8,7 +8,7 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(name = "qr", about = "Generate QR codes")]
 pub struct QRTool {
-    /// The text or URL to encode as QR code
+    /// The text or URL to encode as QR code (use "-" for stdin)
     text: StringInput,
 
     /// Save QR code to file (PNG format)

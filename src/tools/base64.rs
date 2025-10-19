@@ -17,7 +17,7 @@ pub struct Base64Tool {
 enum Base64Command {
     /// Base64 encode contents
     Encode {
-        /// Input to encode
+        /// Input to encode (use "-" for stdin)
         text: StringInput,
         /// Encode with urlsafe character set
         #[arg(long)]
@@ -25,7 +25,7 @@ enum Base64Command {
     },
     /// Base64 decode contents
     Decode {
-        /// Input to decode
+        /// Input to decode (use "-" for stdin)
         text: StringInput,
         /// Decode with urlsafe character set
         #[arg(long)]
