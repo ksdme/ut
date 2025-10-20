@@ -120,9 +120,16 @@ After setting up completions, restart your shell or source your configuration fi
 │   │   ├── sha256
 │   │   ├── sha384
 │   │   └── sha512
-│   └── bcrypt      - Password hashing and verification
-│       ├── hash
-│       └── verify
+│   ├── bcrypt      - Password hashing and verification
+│   │   ├── hash
+│   │   └── verify
+│   ├── jwt         - JWT (JSON Web Token) utilities
+│   │   ├── encode
+│   │   ├── decode
+│   │   └── verify
+│   └── password (pass) - Secure password generation
+│       ├── random characters
+│       └── memorable passphrases
 ├── Data Generation
 │   ├── uuid        - Generate UUIDs
 │   │   ├── v1
@@ -212,6 +219,48 @@ ut bcrypt hash "mypassword"
 # Wrong password verification
 ut bcrypt verify "wrongpassword" '$2b$12$...'
 # Output: invalid
+```
+
+#### `jwt`
+JWT (JSON Web Token) utilities for encoding, decoding, and verifying tokens.
+- Support for HMAC algorithms (HS256, HS384, HS512)
+- Encode with custom claims (iss, sub, aud, exp)
+- Decode without verification (inspect token)
+- Verify with signature validation
+
+```bash
+# Encode a JWT with custom claims
+ut jwt encode --payload '{"user":"alice"}' --secret "my-secret" --issuer "my-app" --expires-in 3600
+
+# Decode a JWT without verification
+ut jwt decode eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Verify a JWT with signature validation
+ut jwt verify TOKEN --secret "my-secret" --issuer "my-app"
+```
+
+#### `password` (alias: `pass`)
+Generate cryptographically secure passwords with various options.
+- Random character-based passwords with customizable length and character sets
+- Memorable passphrases using common words
+- Option to exclude ambiguous characters (0, O, l, I, 1)
+- Strength indicator and entropy calculation
+
+```bash
+# Generate a strong random password
+ut password --length 20
+
+# Generate multiple passwords
+ut password --length 16 --count 5
+
+# Generate without ambiguous characters
+ut password --length 16 --no-ambiguous
+
+# Generate memorable passphrase
+ut password --memorable --words 5
+
+# Generate passphrase with custom separator and capitalization
+ut password --memorable --words 4 --separator "_" --capitalize
 ```
 
 ### Data Generation
