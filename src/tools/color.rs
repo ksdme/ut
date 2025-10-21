@@ -29,7 +29,10 @@ impl Tool for ColorTool {
     fn execute(&self) -> Result<Option<Output>> {
         match &self.command {
             ColorCommand::Convert { color } => {
-                let color = color.as_ref().parse::<Color>().context("Failed to parse color")?;
+                let color = color
+                    .as_ref()
+                    .parse::<Color>()
+                    .context("Failed to parse color")?;
 
                 let [r, g, b, _] = color.to_rgba8();
                 let [_, _, _, a_f] = color.to_array();

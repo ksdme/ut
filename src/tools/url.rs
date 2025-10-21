@@ -232,7 +232,7 @@ mod tests {
         let encoded_str = val.as_str().unwrap().to_string();
 
         let decode_tool = UrlTool {
-            command: UrlCommand::Decode { 
+            command: UrlCommand::Decode {
                 text: StringInput(encoded_str),
             },
         };
