@@ -118,8 +118,6 @@ impl Tool for ULIDTool {
 
 #[cfg(test)]
 mod tests {
-    use clap::builder::Str;
-
     use super::*;
 
     #[test]
