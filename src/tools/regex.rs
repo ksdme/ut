@@ -239,6 +239,13 @@ fn run_app_loop(
                     return Ok(app.get_regex_text().map(|val| val.clone()));
                 }
 
+                // Skip adding literal newlines to the regex field.
+                if matches!(key.code, KeyCode::Enter)
+                    && matches!(app.input_focus, InputFocus::Regex)
+                {
+                    continue;
+                }
+
                 // Handle Tab to switch focus.
                 if matches!(key.code, KeyCode::Tab | KeyCode::BackTab) {
                     app.input_focus = match app.input_focus {
