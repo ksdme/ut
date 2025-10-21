@@ -275,7 +275,7 @@ Convert text between different case formats.
 ut case lower "Hello World"
 ut case camel "hello_world"
 ut case snake "HelloWorld"
-printf "HELLO WORLD" | ut case lower -
+echo -n "Hello :)" | ut case lower -
 ```
 
 #### `pretty-print` (alias: `pp`)

@@ -16,7 +16,7 @@ pub struct ColorTool {
 enum ColorCommand {
     /// Convert colors between different formats
     Convert {
-        /// Color value in any supported format (use "-" for stdin)
+        /// Color value in any supported format (hex, rgb, rgba, hsl, hwb, cmyk, lch, oklch). Use "-" for stdin.
         color: StringInput,
     },
 }
