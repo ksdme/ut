@@ -11,7 +11,6 @@ impl FromStr for StringInput {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s == "-" {
-            // Read from stdin
             let mut buffer = String::new();
             io::stdin().read_to_string(&mut buffer)?;
             Ok(StringInput(buffer))
