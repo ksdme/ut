@@ -258,6 +258,7 @@ ut ulid parse 01K7FW2PG44QTQZZR09SZCNAEF  # Show timestamp and details
 ut ulid validate 01K7FW2PG44QTQZZR09SZCNAEF  # Check if valid
 ut ulid to-uuid 01K7FW2PG44QTQZZR09SZCNAEF   # Convert to UUID
 ut ulid from-uuid 550e8400-e29b-41d4-a716-446655440000  # UUID to ULID
+echo -n 01K843W3XDX258EG219FWM5565 | ut ulid to-uuid -
 ```
 
 #### `token` (alias: `secret`)

@@ -1,4 +1,7 @@
-use crate::tool::{Output, Tool};
+use crate::{
+    args::StringInput,
+    tool::{Output, Tool},
+};
 use anyhow::Context;
 use clap::{Command, CommandFactory, Parser, Subcommand};
 use ulid::Ulid;
@@ -25,26 +28,26 @@ enum ULIDCommand {
 
     /// Parse and inspect a ULID
     Parse {
-        /// ULID string to parse
-        ulid: String,
+        /// ULID string to parse (use "-" for stdin)
+        ulid: StringInput,
     },
 
     /// Validate a ULID string
     Validate {
-        /// ULID string to validate
-        ulid: String,
+        /// ULID string to validate (use "-" for stdin)
+        ulid: StringInput,
     },
 
     /// Convert ULID to UUID
     ToUUID {
-        /// ULID to convert
-        ulid: String,
+        /// ULID to convert (use "-" for stdin)
+        ulid: StringInput,
     },
 
     /// Convert UUID to ULID
     FromUUID {
-        /// UUID to convert
-        uuid: String,
+        /// UUID to convert (use "-" for stdin)
+        uuid: StringInput,
     },
 }
 
@@ -56,14 +59,12 @@ impl Tool for ULIDTool {
     fn execute(&self) -> anyhow::Result<Option<Output>> {
         let result = match &self.command {
             ULIDCommand::Generate { quantity } => {
-                let ulids: Vec<String> = (0..*quantity)
-                    .map(|_| Ulid::new().to_string())
-                    .collect();
+                let ulids: Vec<String> = (0..*quantity).map(|_| Ulid::new().to_string()).collect();
                 serde_json::json!(ulids)
             }
 
             ULIDCommand::Parse { ulid } => {
-                let parsed = Ulid::from_string(ulid).context("Invalid ULID format")?;
+                let parsed = Ulid::from_string(ulid.as_ref()).context("Invalid ULID format")?;
 
                 let timestamp_ms = parsed.timestamp_ms();
                 let datetime_secs = timestamp_ms / 1000;
@@ -74,7 +75,6 @@ impl Tool for ULIDTool {
                     .unwrap_or_else(|_| "Invalid timestamp".to_string());
 
                 serde_json::json!({
-                    "ulid": ulid,
                     "datetime": datetime_str,
                     "timestamp_ms": timestamp_ms,
                     "bytes": parsed.to_bytes(),
@@ -83,7 +83,7 @@ impl Tool for ULIDTool {
 
             ULIDCommand::Validate { ulid } => {
                 // TODO: Also use proper exit code.
-                serde_json::json!(if Ulid::from_string(ulid).is_ok() {
+                serde_json::json!(if Ulid::from_string(ulid.as_ref()).is_ok() {
                     "valid"
                 } else {
                     "invalid"
@@ -91,23 +91,22 @@ impl Tool for ULIDTool {
             }
 
             ULIDCommand::ToUUID { ulid } => {
-                let parsed = Ulid::from_string(ulid).context("Invalid ULID format")?;
+                let parsed = Ulid::from_string(ulid.as_ref()).context("Invalid ULID format")?;
                 let uuid: uuid::Uuid = parsed.into();
                 serde_json::json!({
-                    "ulid": ulid,
                     "uuid": uuid.to_string(),
                 })
             }
 
             ULIDCommand::FromUUID { uuid } => {
-                let parsed_uuid = uuid::Uuid::parse_str(uuid).context("Invalid UUID format")?;
+                let parsed_uuid =
+                    uuid::Uuid::parse_str(uuid.as_ref()).context("Invalid UUID format")?;
 
                 // Convert UUID bytes to ULID
                 let uuid_bytes = parsed_uuid.as_bytes();
                 let ulid = Ulid::from_bytes(*uuid_bytes);
 
                 serde_json::json!({
-                    "uuid": uuid,
                     "ulid": ulid.to_string(),
                 })
             }
@@ -119,6 +118,8 @@ impl Tool for ULIDTool {
 
 #[cfg(test)]
 mod tests {
+    use clap::builder::Str;
+
     use super::*;
 
     #[test]
@@ -166,7 +167,9 @@ mod tests {
     fn test_validate_valid() {
         let valid_ulid = Ulid::new().to_string();
         let tool = ULIDTool {
-            command: ULIDCommand::Validate { ulid: valid_ulid },
+            command: ULIDCommand::Validate {
+                ulid: StringInput(valid_ulid),
+            },
         };
         let result = tool.execute().unwrap().unwrap();
 
@@ -181,7 +184,7 @@ mod tests {
     fn test_validate_invalid() {
         let tool = ULIDTool {
             command: ULIDCommand::Validate {
-                ulid: "invalid-ulid".to_string(),
+                ulid: StringInput("invalid-ulid".to_string()),
             },
         };
         let result = tool.execute().unwrap().unwrap();
@@ -196,11 +199,10 @@ mod tests {
     #[test]
     fn test_parse() {
         let ulid = Ulid::new();
-        let ulid_str = ulid.to_string();
 
         let tool = ULIDTool {
             command: ULIDCommand::Parse {
-                ulid: ulid_str.clone(),
+                ulid: StringInput(ulid.to_string()),
             },
         };
         let result = tool.execute().unwrap().unwrap();
@@ -209,7 +211,6 @@ mod tests {
             unreachable!()
         };
 
-        assert_eq!(val["ulid"].as_str().unwrap(), ulid_str);
         assert!(val["timestamp_ms"].as_u64().is_some());
         assert!(val["datetime"].as_str().is_some());
     }
@@ -217,11 +218,10 @@ mod tests {
     #[test]
     fn test_ulid_to_uuid_conversion() {
         let ulid = Ulid::new();
-        let ulid_str = ulid.to_string();
 
         let tool = ULIDTool {
             command: ULIDCommand::ToUUID {
-                ulid: ulid_str.clone(),
+                ulid: StringInput(ulid.to_string()),
             },
         };
         let result = tool.execute().unwrap().unwrap();
@@ -230,7 +230,6 @@ mod tests {
             unreachable!()
         };
 
-        assert_eq!(val["ulid"].as_str().unwrap(), ulid_str);
         let uuid_str = val["uuid"].as_str().unwrap();
         assert!(uuid::Uuid::parse_str(uuid_str).is_ok());
     }
@@ -238,11 +237,10 @@ mod tests {
     #[test]
     fn test_uuid_to_ulid_conversion() {
         let uuid = uuid::Uuid::new_v4();
-        let uuid_str = uuid.to_string();
 
         let tool = ULIDTool {
             command: ULIDCommand::FromUUID {
-                uuid: uuid_str.clone(),
+                uuid: StringInput(uuid.to_string()),
             },
         };
         let result = tool.execute().unwrap().unwrap();
@@ -251,7 +249,6 @@ mod tests {
             unreachable!()
         };
 
-        assert_eq!(val["uuid"].as_str().unwrap(), uuid_str);
         let ulid_str = val["ulid"].as_str().unwrap();
         assert!(Ulid::from_string(ulid_str).is_ok());
     }
@@ -264,7 +261,7 @@ mod tests {
         // Convert to UUID
         let to_uuid_tool = ULIDTool {
             command: ULIDCommand::ToUUID {
-                ulid: original_ulid_str.clone(),
+                ulid: StringInput(original_ulid_str.clone()),
             },
         };
         let uuid_result = to_uuid_tool.execute().unwrap().unwrap();
@@ -275,7 +272,9 @@ mod tests {
 
         // Convert back to ULID
         let from_uuid_tool = ULIDTool {
-            command: ULIDCommand::FromUUID { uuid: uuid_str },
+            command: ULIDCommand::FromUUID {
+                uuid: StringInput(uuid_str.to_string()),
+            },
         };
         let ulid_result = from_uuid_tool.execute().unwrap().unwrap();
         let Output::JsonValue(ulid_val) = ulid_result else {
