@@ -1,3 +1,4 @@
+use crate::args::StringInput;
 use crate::tool::{Output, Tool};
 use anyhow::{Context, Result};
 use clap::{Command, CommandFactory, Parser, Subcommand};
@@ -13,8 +14,8 @@ pub struct BcryptTool {
 enum BcryptCommand {
     /// Hash a password using bcrypt
     Hash {
-        /// Password to hash
-        password: String,
+        /// Password to hash (use "-" for stdin)
+        password: StringInput,
 
         /// Cost factor (4-31, default: 12). Higher values are more secure but slower
         #[arg(short, long, default_value = "12")]
@@ -22,8 +23,8 @@ enum BcryptCommand {
     },
     /// Verify a password against a bcrypt hash
     Verify {
-        /// Password to verify
-        password: String,
+        /// Password to verify (use "-" for stdin)
+        password: StringInput,
 
         /// Bcrypt hash to verify against
         hash: String,
@@ -44,12 +45,12 @@ impl Tool for BcryptTool {
                 }
 
                 Ok(Some(Output::JsonValue(serde_json::json!(
-                    bcrypt::hash(password, *cost).context("Failed to hash password")?
+                    bcrypt::hash(password.as_ref(), *cost).context("Failed to hash password")?
                 ))))
             }
             BcryptCommand::Verify { password, hash } => {
                 let is_valid =
-                    bcrypt::verify(password, hash).context("Failed to verify password")?;
+                    bcrypt::verify(password.as_ref(), hash).context("Failed to verify password")?;
 
                 // TODO: Also use proper exit code.
                 Ok(Some(Output::JsonValue(serde_json::json!(if is_valid {
@@ -65,12 +66,13 @@ impl Tool for BcryptTool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::args::StringInput;
 
     #[test]
     fn test_hash_default_cost() {
         let tool = BcryptTool {
             command: BcryptCommand::Hash {
-                password: "test_password".to_string(),
+                password: StringInput("test_password".to_string()),
                 cost: 12,
             },
         };
@@ -90,7 +92,7 @@ mod tests {
     fn test_hash_custom_cost() {
         let tool = BcryptTool {
             command: BcryptCommand::Hash {
-                password: "test_password".to_string(),
+                password: StringInput("test_password".to_string()),
                 cost: 8,
             },
         };
@@ -109,7 +111,7 @@ mod tests {
     fn test_hash_cost_too_low() {
         let tool = BcryptTool {
             command: BcryptCommand::Hash {
-                password: "test_password".to_string(),
+                password: StringInput("test_password".to_string()),
                 cost: 3,
             },
         };
@@ -127,7 +129,7 @@ mod tests {
     fn test_hash_cost_too_high() {
         let tool = BcryptTool {
             command: BcryptCommand::Hash {
-                password: "test_password".to_string(),
+                password: StringInput("test_password".to_string()),
                 cost: 32,
             },
         };
@@ -146,7 +148,7 @@ mod tests {
         // First hash a password
         let hash_tool = BcryptTool {
             command: BcryptCommand::Hash {
-                password: "correct_password".to_string(),
+                password: StringInput("correct_password".to_string()),
                 cost: 6, // Use lower cost for faster tests
             },
         };
@@ -160,7 +162,7 @@ mod tests {
         // Now verify the correct password
         let verify_tool = BcryptTool {
             command: BcryptCommand::Verify {
-                password: "correct_password".to_string(),
+                password: StringInput("correct_password".to_string()),
                 hash,
             },
         };
@@ -177,7 +179,7 @@ mod tests {
         // First hash a password
         let hash_tool = BcryptTool {
             command: BcryptCommand::Hash {
-                password: "correct_password".to_string(),
+                password: StringInput("correct_password".to_string()),
                 cost: 6, // Use lower cost for faster tests
             },
         };
@@ -191,7 +193,7 @@ mod tests {
         // Now verify an incorrect password
         let verify_tool = BcryptTool {
             command: BcryptCommand::Verify {
-                password: "wrong_password".to_string(),
+                password: StringInput("wrong_password".to_string()),
                 hash,
             },
         };
@@ -207,7 +209,7 @@ mod tests {
     fn test_verify_invalid_hash_format() {
         let verify_tool = BcryptTool {
             command: BcryptCommand::Verify {
-                password: "test_password".to_string(),
+                password: StringInput("test_password".to_string()),
                 hash: "not_a_valid_bcrypt_hash".to_string(),
             },
         };
@@ -219,7 +221,7 @@ mod tests {
     fn test_hash_empty_password() {
         let tool = BcryptTool {
             command: BcryptCommand::Hash {
-                password: "".to_string(),
+                password: StringInput("".to_string()),
                 cost: 6,
             },
         };
@@ -239,7 +241,7 @@ mod tests {
         // Hash an empty password
         let hash_tool = BcryptTool {
             command: BcryptCommand::Hash {
-                password: "".to_string(),
+                password: StringInput("".to_string()),
                 cost: 6,
             },
         };
@@ -253,7 +255,7 @@ mod tests {
         // Verify with empty password
         let verify_tool = BcryptTool {
             command: BcryptCommand::Verify {
-                password: "".to_string(),
+                password: StringInput("".to_string()),
                 hash,
             },
         };
@@ -269,7 +271,7 @@ mod tests {
     fn test_hash_special_characters() {
         let tool = BcryptTool {
             command: BcryptCommand::Hash {
-                password: "p@ssw0rd!#$%^&*()".to_string(),
+                password: StringInput("p@ssw0rd!#$%^&*()".to_string()),
                 cost: 6,
             },
         };
@@ -288,7 +290,7 @@ mod tests {
     fn test_hash_unicode_characters() {
         let tool = BcryptTool {
             command: BcryptCommand::Hash {
-                password: "密码🔒".to_string(),
+                password: StringInput("密码🔒".to_string()),
                 cost: 6,
             },
         };
@@ -309,7 +311,7 @@ mod tests {
         let password = "test123";
         let hash_tool = BcryptTool {
             command: BcryptCommand::Hash {
-                password: password.to_string(),
+                password: StringInput(password.to_string()),
                 cost: 6,
             },
         };
@@ -322,7 +324,7 @@ mod tests {
         // Now verify with the correct password
         let verify_tool = BcryptTool {
             command: BcryptCommand::Verify {
-                password: password.to_string(),
+                password: StringInput(password.to_string()),
                 hash: hash.clone(),
             },
         };
@@ -336,7 +338,7 @@ mod tests {
         // Verify with wrong password
         let verify_tool2 = BcryptTool {
             command: BcryptCommand::Verify {
-                password: "wrongpassword".to_string(),
+                password: StringInput("wrongpassword".to_string()),
                 hash,
             },
         };
@@ -353,7 +355,7 @@ mod tests {
         // Hash the same password twice
         let tool1 = BcryptTool {
             command: BcryptCommand::Hash {
-                password: "same_password".to_string(),
+                password: StringInput("same_password".to_string()),
                 cost: 6,
             },
         };
@@ -361,7 +363,7 @@ mod tests {
 
         let tool2 = BcryptTool {
             command: BcryptCommand::Hash {
-                password: "same_password".to_string(),
+                password: StringInput("same_password".to_string()),
                 cost: 6,
             },
         };
@@ -381,7 +383,7 @@ mod tests {
         let hash1 = val1.as_str().unwrap().to_string();
         let verify_tool = BcryptTool {
             command: BcryptCommand::Verify {
-                password: "same_password".to_string(),
+                password: StringInput("same_password".to_string()),
                 hash: hash1,
             },
         };

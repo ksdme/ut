@@ -1,3 +1,4 @@
+use crate::args::StringInput;
 use crate::tool::{Output, Tool};
 use clap::{Command, CommandFactory, Parser, Subcommand};
 
@@ -12,43 +13,43 @@ pub struct CaseTool {
 enum CaseCommand {
     /// Convert text to lowercase
     Lower {
-        /// Text to convert
-        text: String,
+        /// Text to convert (use "-" for stdin)
+        text: StringInput,
     },
     /// Convert text to UPPERCASE
     Upper {
-        /// Text to convert
-        text: String,
+        /// Text to convert (use "-" for stdin)
+        text: StringInput,
     },
     /// Convert text to camelCase
     Camel {
-        /// Text to convert
-        text: String,
+        /// Text to convert (use "-" for stdin)
+        text: StringInput,
     },
     /// Convert text to Title Case
     Title {
-        /// Text to convert
-        text: String,
+        /// Text to convert (use "-" for stdin)
+        text: StringInput,
     },
     /// Convert text to CONSTANT_CASE
     Constant {
-        /// Text to convert
-        text: String,
+        /// Text to convert (use "-" for stdin)
+        text: StringInput,
     },
     /// Convert text to Header-Case
     Header {
-        /// Text to convert
-        text: String,
+        /// Text to convert (use "-" for stdin)
+        text: StringInput,
     },
     /// Convert text to sentence case
     Sentence {
-        /// Text to convert
-        text: String,
+        /// Text to convert (use "-" for stdin)
+        text: StringInput,
     },
     /// Convert text to snake_case
     Snake {
-        /// Text to convert
-        text: String,
+        /// Text to convert (use "-" for stdin)
+        text: StringInput,
     },
 }
 
@@ -59,14 +60,14 @@ impl Tool for CaseTool {
 
     fn execute(&self) -> anyhow::Result<Option<Output>> {
         let result = match &self.command {
-            CaseCommand::Lower { text } => to_lowercase(text),
-            CaseCommand::Upper { text } => to_uppercase(text),
-            CaseCommand::Camel { text } => to_camel_case(text),
-            CaseCommand::Title { text } => to_title_case(text),
-            CaseCommand::Constant { text } => to_constant_case(text),
-            CaseCommand::Header { text } => to_header_case(text),
-            CaseCommand::Sentence { text } => to_sentence_case(text),
-            CaseCommand::Snake { text } => to_snake_case(text),
+            CaseCommand::Lower { text } => to_lowercase(text.as_ref()),
+            CaseCommand::Upper { text } => to_uppercase(text.as_ref()),
+            CaseCommand::Camel { text } => to_camel_case(text.as_ref()),
+            CaseCommand::Title { text } => to_title_case(text.as_ref()),
+            CaseCommand::Constant { text } => to_constant_case(text.as_ref()),
+            CaseCommand::Header { text } => to_header_case(text.as_ref()),
+            CaseCommand::Sentence { text } => to_sentence_case(text.as_ref()),
+            CaseCommand::Snake { text } => to_snake_case(text.as_ref()),
         };
 
         Ok(Some(Output::JsonValue(serde_json::json!(result))))

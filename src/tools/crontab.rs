@@ -1,3 +1,4 @@
+use crate::args::StringInput;
 use crate::tool::{Output, Tool};
 use anyhow::Context;
 use chrono::{DateTime, FixedOffset, Utc};
@@ -20,8 +21,9 @@ pub struct CrontabTool {
 enum CrontabCommand {
     /// Parse crontab expression and show upcoming firing times
     Schedule {
-        /// Crontab expression (e.g., "0 9 * * 1-5" for weekdays at 9 AM, or "0 0 9 * * 1-5" for extended format)
-        expression: String,
+        /// Crontab expression (e.g., "0 9 * * 1-5" for weekdays at 9 AM,
+        /// or "0 0 9 * * 1-5" for extended format). Use "-" for stdin.
+        expression: StringInput,
 
         /// Number of upcoming firing times to show (default: 5)
         #[arg(short = 'n', long = "count", default_value = "5")]
@@ -44,7 +46,7 @@ impl Tool for CrontabTool {
                 expression,
                 count,
                 after,
-            } => execute_schedule(expression, *count, after.as_ref()),
+            } => execute_schedule(expression.as_ref(), *count, after.as_ref()),
         }
     }
 }
@@ -104,12 +106,13 @@ fn get_upcoming_times(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::args::StringInput;
 
     #[test]
     fn test_parse_simple_cron() {
         let tool = CrontabTool {
             command: CrontabCommand::Schedule {
-                expression: "0 9 * * 1-5".to_string(),
+                expression: StringInput("0 9 * * 1-5".to_string()),
                 count: 3,
                 after: Some("2024-01-01T00:00:00Z".to_string()),
             },
@@ -133,7 +136,7 @@ mod tests {
     fn test_parse_daily_cron() {
         let tool = CrontabTool {
             command: CrontabCommand::Schedule {
-                expression: "0 0 * * *".to_string(),
+                expression: StringInput("0 0 * * *".to_string()),
                 count: 2,
                 after: Some("2024-01-01T00:00:00Z".to_string()),
             },
@@ -156,7 +159,7 @@ mod tests {
     fn test_parse_hourly_cron() {
         let tool = CrontabTool {
             command: CrontabCommand::Schedule {
-                expression: "0 * * * *".to_string(),
+                expression: StringInput("0 * * * *".to_string()),
                 count: 5,
                 after: Some("2024-01-01T00:00:00Z".to_string()),
             },
@@ -182,7 +185,7 @@ mod tests {
     fn test_parse_with_after_time() {
         let tool = CrontabTool {
             command: CrontabCommand::Schedule {
-                expression: "0 9 * * 1-5".to_string(),
+                expression: StringInput("0 9 * * 1-5".to_string()),
                 count: 2,
                 after: Some("2024-03-15T10:00:00Z".to_string()),
             },
@@ -205,7 +208,7 @@ mod tests {
     fn test_parse_invalid_expression() {
         let tool = CrontabTool {
             command: CrontabCommand::Schedule {
-                expression: "invalid".to_string(),
+                expression: StringInput("invalid".to_string()),
                 count: 5,
                 after: None,
             },
@@ -219,7 +222,7 @@ mod tests {
     fn test_parse_invalid_after_time() {
         let tool = CrontabTool {
             command: CrontabCommand::Schedule {
-                expression: "0 9 * * 1-5".to_string(),
+                expression: StringInput("0 9 * * 1-5".to_string()),
                 count: 5,
                 after: Some("invalid-time".to_string()),
             },
@@ -233,7 +236,7 @@ mod tests {
     fn test_timezone_preserved() {
         let tool = CrontabTool {
             command: CrontabCommand::Schedule {
-                expression: "0 9 * * 1-5".to_string(),
+                expression: StringInput("0 9 * * 1-5".to_string()),
                 count: 2,
                 after: Some("2024-01-01T00:00:00+05:30".to_string()),
             },

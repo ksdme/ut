@@ -1,3 +1,4 @@
+use crate::args::StringInput;
 use crate::tool::{Output, Tool};
 use anyhow::Context;
 use clap::{Command, CommandFactory, Parser};
@@ -18,7 +19,7 @@ use nom::{
     about = "Parse and convert datetime to different timezones"
 )]
 pub struct DateTimeTool {
-    /// DateTime value to parse
+    /// DateTime value to parse (use "-" for stdin)
     ///
     /// Supported formats:
     /// - "now" for current time
@@ -26,7 +27,7 @@ pub struct DateTimeTool {
     /// - Unix timestamp in seconds: 1728057000 or 1728057000.5
     /// - Unix timestamp in milliseconds: 1728057000000ms or 1728057000500.5ms
     /// - Custom format (requires --parse-format)
-    datetime: String,
+    datetime: StringInput,
 
     /// Input timezone to use when parsing datetime without timezone info (overrides any timezone in the input)
     #[arg(short = 's', long = "source-timezone")]
@@ -403,7 +404,8 @@ impl Tool for DateTimeTool {
 
     fn execute(&self) -> anyhow::Result<Option<Output>> {
         // Parse the input datetime
-        let mut zoned = if self.datetime.to_lowercase() == "now" {
+        let datetime_str = self.datetime.as_ref();
+        let mut zoned = if datetime_str.to_lowercase() == "now" {
             Zoned::now()
         } else if let Some(ref parse_format) = self.parse_format {
             // Parse using custom format
@@ -412,22 +414,22 @@ impl Tool for DateTimeTool {
             } else {
                 None
             };
-            parse_with_format(&self.datetime, parse_format, in_tz.as_ref())?
+            parse_with_format(datetime_str, parse_format, in_tz.as_ref())?
         } else {
             // Try parsing as Zoned first
-            self.datetime.parse::<Zoned>().or_else(|_| {
+            datetime_str.parse::<Zoned>().or_else(|_| {
                 // Try parsing as Timestamp (handles ISO 8601 with offset/Z but no timezone name)
-                let datetime_str = self.datetime.replace('Z', "+00:00");
-                datetime_str
+                let datetime_str_clean = datetime_str.replace('Z', "+00:00");
+                datetime_str_clean
                     .parse::<Timestamp>()
                     .map(|ts| ts.to_zoned(TimeZone::UTC))
                     .or_else(|_| -> anyhow::Result<Zoned> {
                         // Try parsing as Unix timestamp
                         // Check if it ends with "ms" for milliseconds
-                        let (timestamp_str, is_milliseconds) = if self.datetime.ends_with("ms") {
-                            (&self.datetime[..self.datetime.len() - 2], true)
+                        let (timestamp_str, is_milliseconds) = if datetime_str.ends_with("ms") {
+                            (&datetime_str[..datetime_str.len() - 2], true)
                         } else {
-                            (self.datetime.as_str(), false)
+                            (datetime_str, false)
                         };
 
                         if let Ok(timestamp_f64) = timestamp_str.parse::<f64>() {
@@ -450,7 +452,7 @@ impl Tool for DateTimeTool {
                         // If no offset, try parsing as civil datetime and use input timezone or UTC
                         use jiff::civil::DateTime;
                         let dt: DateTime =
-                            self.datetime.parse().context("Could not parse datetime")?;
+                            datetime_str.parse().context("Could not parse datetime")?;
                         let tz = if let Some(ref in_tz_str) = self.source_timezone {
                             TimeZone::get(in_tz_str).context("Could not parse input timezone")?
                         } else {
@@ -465,9 +467,9 @@ impl Tool for DateTimeTool {
         if let Some(ref in_tz_str) = self.source_timezone {
             // Check if we already used source_timezone during parsing by checking if the datetime had no offset
             if self.parse_format.is_none()
-                && (self.datetime.contains('+')
-                    || self.datetime.contains('Z')
-                    || self.datetime.contains('['))
+                && (datetime_str.contains('+')
+                    || datetime_str.contains('Z')
+                    || datetime_str.contains('['))
             {
                 let in_tz = TimeZone::get(in_tz_str).context("Could not parse input timezone")?;
                 let dt = zoned.datetime();
@@ -510,11 +512,12 @@ impl Tool for DateTimeTool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::args::StringInput;
 
     #[test]
     fn test_parse_iso8601_with_z() {
         let tool = DateTimeTool {
-            datetime: "2025-10-04T15:30:00Z".to_string(),
+            datetime: StringInput("2025-10-04T15:30:00Z".to_string()),
             source_timezone: None,
             target_timezone: None,
             parse_format: None,
@@ -527,7 +530,7 @@ mod tests {
     #[test]
     fn test_parse_iso8601_with_offset() {
         let tool = DateTimeTool {
-            datetime: "2025-10-04T15:30:00+05:30".to_string(),
+            datetime: StringInput("2025-10-04T15:30:00+05:30".to_string()),
             source_timezone: None,
             target_timezone: None,
             parse_format: None,
@@ -540,7 +543,7 @@ mod tests {
     #[test]
     fn test_parse_with_timezone() {
         let tool = DateTimeTool {
-            datetime: "2025-10-04T15:30:00[America/New_York]".to_string(),
+            datetime: StringInput("2025-10-04T15:30:00[America/New_York]".to_string()),
             source_timezone: None,
             target_timezone: None,
             parse_format: None,
@@ -553,7 +556,7 @@ mod tests {
     #[test]
     fn test_in_timezone() {
         let tool = DateTimeTool {
-            datetime: "2025-10-04T15:30:00Z".to_string(),
+            datetime: StringInput("2025-10-04T15:30:00Z".to_string()),
             source_timezone: Some("America/New_York".to_string()),
             target_timezone: None,
             parse_format: None,
@@ -571,7 +574,7 @@ mod tests {
     #[test]
     fn test_to_timezone_conversion() {
         let tool = DateTimeTool {
-            datetime: "2025-10-04T15:30:00Z".to_string(),
+            datetime: StringInput("2025-10-04T15:30:00Z".to_string()),
             source_timezone: None,
             target_timezone: Some("Asia/Tokyo".to_string()),
             parse_format: None,
@@ -587,7 +590,7 @@ mod tests {
     #[test]
     fn test_in_and_to_timezone_combined() {
         let tool = DateTimeTool {
-            datetime: "2025-10-04T15:30:00".to_string(),
+            datetime: StringInput("2025-10-04T15:30:00".to_string()),
             source_timezone: Some("UTC".to_string()),
             target_timezone: Some("Asia/Kolkata".to_string()),
             parse_format: None,
@@ -603,7 +606,7 @@ mod tests {
     #[test]
     fn test_default_iso_format_utc() {
         let tool = DateTimeTool {
-            datetime: "2025-10-04T15:30:00Z".to_string(),
+            datetime: StringInput("2025-10-04T15:30:00Z".to_string()),
             source_timezone: None,
             target_timezone: None,
             parse_format: None,
@@ -619,7 +622,7 @@ mod tests {
     #[test]
     fn test_default_iso_format_with_offset() {
         let tool = DateTimeTool {
-            datetime: "2025-10-04T15:30:00+05:30".to_string(),
+            datetime: StringInput("2025-10-04T15:30:00+05:30".to_string()),
             source_timezone: None,
             target_timezone: None,
             parse_format: None,
@@ -635,7 +638,7 @@ mod tests {
     #[test]
     fn test_parse_with_custom_format() {
         let tool = DateTimeTool {
-            datetime: "04/10/2025 15:30".to_string(),
+            datetime: StringInput("04/10/2025 15:30".to_string()),
             source_timezone: Some("UTC".to_string()),
             target_timezone: None,
             parse_format: Some("Date2/MonthNum2/Year4 Hour24:Minute2".to_string()),
@@ -651,7 +654,7 @@ mod tests {
     #[test]
     fn test_parse_with_month_name() {
         let tool = DateTimeTool {
-            datetime: "October 04, 2025 03:30 PM".to_string(),
+            datetime: StringInput("October 04, 2025 03:30 PM".to_string()),
             source_timezone: Some("UTC".to_string()),
             target_timezone: None,
             parse_format: Some("MonthName Date2, Year4 Hour12:Minute2 AMPM".to_string()),
@@ -667,7 +670,7 @@ mod tests {
     #[test]
     fn test_parse_with_timezone_offset() {
         let tool = DateTimeTool {
-            datetime: "2025-10-04 15:30:00 +05:30".to_string(),
+            datetime: StringInput("2025-10-04 15:30:00 +05:30".to_string()),
             source_timezone: None,
             target_timezone: Some("UTC".to_string()),
             parse_format: Some("Year4-MonthNum2-Date2 Hour24:Minute2:Second TZ".to_string()),
@@ -684,7 +687,7 @@ mod tests {
     #[test]
     fn test_parse_unix_timestamp_seconds() {
         let tool = DateTimeTool {
-            datetime: "1728057000".to_string(), // 2024-10-04 15:50:00 UTC
+            datetime: StringInput("1728057000".to_string()), // 2024-10-04 15:50:00 UTC
             source_timezone: None,
             target_timezone: None,
             parse_format: None,
@@ -700,7 +703,7 @@ mod tests {
     #[test]
     fn test_parse_unix_timestamp_fractional() {
         let tool = DateTimeTool {
-            datetime: "1728057000.5".to_string(), // 2024-10-04 15:50:00.5 UTC
+            datetime: StringInput("1728057000.5".to_string()), // 2024-10-04 15:50:00.5 UTC
             source_timezone: None,
             target_timezone: None,
             parse_format: None,
@@ -716,7 +719,7 @@ mod tests {
     #[test]
     fn test_parse_unix_timestamp_milliseconds() {
         let tool = DateTimeTool {
-            datetime: "1728057000000ms".to_string(), // 2024-10-04 15:50:00 UTC in milliseconds
+            datetime: StringInput("1728057000000ms".to_string()), // 2024-10-04 15:50:00 UTC in milliseconds
             source_timezone: None,
             target_timezone: None,
             parse_format: None,
@@ -733,7 +736,7 @@ mod tests {
     fn test_parse_unix_timestamp_without_ms_suffix_as_seconds() {
         // Numbers without "ms" suffix are always treated as seconds
         let tool = DateTimeTool {
-            datetime: "9999999999".to_string(), // Treated as seconds (year 2286)
+            datetime: StringInput("9999999999".to_string()), // Treated as seconds (year 2286)
             source_timezone: None,
             target_timezone: None,
             parse_format: None,
@@ -749,7 +752,7 @@ mod tests {
     #[test]
     fn test_parse_unix_timestamp_fractional_milliseconds() {
         let tool = DateTimeTool {
-            datetime: "1728057000500.5ms".to_string(), // 2024-10-04 15:50:00.5005 UTC
+            datetime: StringInput("1728057000500.5ms".to_string()), // 2024-10-04 15:50:00.5005 UTC
             source_timezone: None,
             target_timezone: None,
             parse_format: None,

@@ -1,3 +1,4 @@
+use crate::args::StringInput;
 use crate::tool::{Output, Tool};
 use anyhow::{Context, Result};
 use clap::{Command, CommandFactory, Parser};
@@ -7,8 +8,8 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(name = "qr", about = "Generate QR codes")]
 pub struct QRTool {
-    /// The text or URL to encode as QR code
-    text: String,
+    /// The text or URL to encode as QR code (use "-" for stdin)
+    text: StringInput,
 
     /// Save QR code to file (PNG format)
     #[arg(short, long)]
@@ -21,7 +22,7 @@ impl Tool for QRTool {
     }
 
     fn execute(&self) -> Result<Option<Output>> {
-        let code = QrCode::new(&self.text).context("Failed to generate QR code")?;
+        let code = QrCode::new(self.text.as_ref()).context("Failed to generate QR code")?;
 
         if let Some(output_path) = &self.output {
             // Save to file

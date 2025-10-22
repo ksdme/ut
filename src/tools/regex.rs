@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use clap::{CommandFactory, Parser};
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
@@ -20,7 +21,7 @@ use std::{
 };
 use tui_textarea::{Input, TextArea};
 
-use crate::tool::Tool;
+use crate::tool::{Output, Tool};
 
 #[derive(Parser, Debug)]
 #[command(name = "regex", about = "Interactive regex tester")]
@@ -56,11 +57,10 @@ impl Tool for RegexTool {
         )?;
         terminal.show_cursor()?;
 
-        if let Err(err) = res {
-            println!("{err:?}");
+        match res {
+            Ok(value) => Ok(Some(Output::JsonValue(serde_json::json!(value)))),
+            Err(err) => Err(anyhow!(err)),
         }
-
-        Ok(None)
     }
 }
 
@@ -105,6 +105,10 @@ impl<'a> App<'a> {
 }
 
 impl<'a> App<'a> {
+    fn get_regex_text(&self) -> Option<&String> {
+        return self.regex_textarea.lines().first();
+    }
+
     fn get_sample_text(&self) -> String {
         self.sample_textarea.lines().join("\n")
     }
@@ -113,7 +117,7 @@ impl<'a> App<'a> {
         self.compiled_regex = None;
         self.regex_error = None;
 
-        let Some(regex_input) = self.regex_textarea.lines().first() else {
+        let Some(regex_input) = self.get_regex_text() else {
             return;
         };
 
@@ -220,7 +224,7 @@ impl<'a> App<'a> {
 fn run_app_loop(
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
     app: &mut App,
-) -> io::Result<()> {
+) -> io::Result<Option<String>> {
     loop {
         terminal.draw(|f| draw_ui(f, app))?;
 
@@ -232,7 +236,14 @@ fn run_app_loop(
                         .modifiers
                         .contains(crossterm::event::KeyModifiers::CONTROL)
                 {
-                    return Ok(());
+                    return Ok(app.get_regex_text().map(|val| val.clone()));
+                }
+
+                // Skip adding literal newlines to the regex field.
+                if matches!(key.code, KeyCode::Enter)
+                    && matches!(app.input_focus, InputFocus::Regex)
+                {
+                    continue;
                 }
 
                 // Handle Tab to switch focus.
