@@ -11,7 +11,6 @@ pub mod http;
 pub mod json;
 pub mod jwt;
 pub mod lorem;
-pub mod password;
 pub mod pp;
 pub mod qr;
 pub mod random;

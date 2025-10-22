@@ -127,9 +127,7 @@ After setting up completions, restart your shell or source your configuration fi
 │   │   ├── encode
 │   │   ├── decode
 │   │   └── verify
-│   └── password (pass) - Secure password generation
-│       ├── random characters
-│       └── memorable passphrases
+│   └── password (alias for token) - Secure password generation
 ├── Data Generation
 │   ├── uuid        - Generate UUIDs
 │   │   ├── v1
@@ -137,7 +135,7 @@ After setting up completions, restart your shell or source your configuration fi
 │   │   ├── v4
 │   │   ├── v5
 │   │   └── v7
-│   ├── token (secret) - Generate secure random tokens
+│   ├── token (secret, password) - Generate secure random tokens
 │   ├── lorem       - Generate lorem ipsum text
 │   └── random      - Generate random numbers
 ├── Text Processing
@@ -239,29 +237,8 @@ ut jwt decode eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ut jwt verify TOKEN --secret "my-secret" --issuer "my-app"
 ```
 
-#### `password` (alias: `pass`)
-Generate cryptographically secure passwords with various options.
-- Random character-based passwords with customizable length and character sets
-- Memorable passphrases using common words
-- Option to exclude ambiguous characters (0, O, l, I, 1)
-- Strength indicator and entropy calculation
-
-```bash
-# Generate a strong random password
-ut password --length 20
-
-# Generate multiple passwords
-ut password --length 16 --count 5
-
-# Generate without ambiguous characters
-ut password --length 16 --no-ambiguous
-
-# Generate memorable passphrase
-ut password --memorable --words 5
-
-# Generate passphrase with custom separator and capitalization
-ut password --memorable --words 4 --separator "_" --capitalize
-```
+#### `password` (alias for `token`)
+The `password` command is an alias for the `token` tool. See the `token` section below for usage examples.
 
 ### Data Generation
 
@@ -281,14 +258,24 @@ ut uuid v7
 ut uuid v7 --count 5
 ```
 
-#### `token` (alias: `secret`)
+#### `token` (aliases: `secret`, `password`)
 Generate cryptographically secure random tokens.
 - Customizable length and character sets
 - Uses OS-level secure randomness
+- Can be used for passwords, API keys, session tokens, etc.
 
 ```bash
+# Generate a 32-character token
 ut token --length 32
+
+# Generate a password (using alias)
+ut password --length 16
+
+# Generate without symbols
 ut secret --no-symbols --length 64
+
+# Generate without uppercase letters
+ut token --no-uppercase --length 20
 ```
 
 #### `lorem`
