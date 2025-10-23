@@ -148,7 +148,8 @@ After setting up completions, restart your shell or source your configuration fi
 │   │   ├── constant
 │   │   ├── header
 │   │   ├── sentence
-│   │   └── snake
+│   │   ├── snake
+│   │   └── kebab
 │   ├── pretty-print (pp) - Unescape newlines and tabs
 │   └── diff        - Compare text with visual output
 ├── Development Tools
@@ -294,12 +295,13 @@ ut random --min 0 --max 1 --step 0.01 --count 10
 
 #### `case`
 Convert text between different case formats.
-- lowercase, UPPERCASE, camelCase, snake_case, Title Case, CONSTANT_CASE, Header-Case, Sentence case
+- lowercase, UPPERCASE, camelCase, snake_case, kebab-case, Title Case, CONSTANT_CASE, Header-Case, Sentence case
 
 ```bash
 ut case lower "Hello World"
 ut case camel "hello_world"
 ut case snake "HelloWorld"
+ut case kebab "HelloWorld"
 echo -n "Hello :)" | ut case lower -
 ```
 

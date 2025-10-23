@@ -51,6 +51,11 @@ enum CaseCommand {
         /// Text to convert (use "-" for stdin)
         text: StringInput,
     },
+    /// Convert text to kebab-case
+    Kebab {
+        /// Text to convert (use "-" for stdin)
+        text: StringInput,
+    },
 }
 
 impl Tool for CaseTool {
@@ -68,6 +73,7 @@ impl Tool for CaseTool {
             CaseCommand::Header { text } => to_header_case(text.as_ref()),
             CaseCommand::Sentence { text } => to_sentence_case(text.as_ref()),
             CaseCommand::Snake { text } => to_snake_case(text.as_ref()),
+            CaseCommand::Kebab { text } => to_kebab_case(text.as_ref()),
         };
 
         Ok(Some(Output::JsonValue(serde_json::json!(result))))
@@ -151,6 +157,15 @@ fn to_snake_case(text: &str) -> String {
         .map(|word| word.to_lowercase())
         .collect::<Vec<_>>()
         .join("_")
+}
+
+// kebab-case
+fn to_kebab_case(text: &str) -> String {
+    split_words(text)
+        .iter()
+        .map(|word| word.to_lowercase())
+        .collect::<Vec<_>>()
+        .join("-")
 }
 
 // Splits a string into a sequence of words based on the whitespace, hyphens,
@@ -271,6 +286,15 @@ mod tests {
         assert_eq!(to_snake_case("helloWorld"), "hello_world");
         assert_eq!(to_snake_case("HELLO_WORLD"), "hello_world");
         assert_eq!(to_snake_case("hello-world"), "hello_world");
+    }
+
+    #[test]
+    fn test_kebab_case() {
+        assert_eq!(to_kebab_case("hello world"), "hello-world");
+        assert_eq!(to_kebab_case("Hello World"), "hello-world");
+        assert_eq!(to_kebab_case("helloWorld"), "hello-world");
+        assert_eq!(to_kebab_case("HELLO_WORLD"), "hello-world");
+        assert_eq!(to_kebab_case("hello-world"), "hello-world");
     }
 
     #[test]
