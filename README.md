@@ -120,9 +120,14 @@ After setting up completions, restart your shell or source your configuration fi
 │   │   ├── sha256
 │   │   ├── sha384
 │   │   └── sha512
-│   └── bcrypt      - Password hashing and verification
-│       ├── hash
-│       └── verify
+│   ├── bcrypt      - Password hashing and verification
+│   │   ├── hash
+│   │   └── verify
+│   ├── jwt         - JWT (JSON Web Token) utilities
+│   │   ├── encode
+│   │   ├── decode
+│   │   └── verify
+│   └── password (alias for token) - Secure password generation
 ├── Data Generation
 │   ├── uuid        - Generate UUIDs
 │   │   ├── v1
@@ -130,13 +135,7 @@ After setting up completions, restart your shell or source your configuration fi
 │   │   ├── v4
 │   │   ├── v5
 │   │   └── v7
-│   ├── ulid        - Generate and manipulate ULIDs
-│   │   ├── generate
-│   │   ├── parse
-│   │   ├── validate
-│   │   ├── to-uuid
-│   │   └── from-uuid
-│   ├── token (secret) - Generate secure random tokens
+│   ├── token (secret, password) - Generate secure random tokens
 │   ├── lorem       - Generate lorem ipsum text
 │   └── random      - Generate random numbers
 ├── Text Processing
@@ -225,6 +224,27 @@ ut bcrypt verify "wrongpassword" '$2b$12$...'
 # Output: invalid
 ```
 
+#### `jwt`
+JWT (JSON Web Token) utilities for encoding, decoding, and verifying tokens.
+- Support for HMAC algorithms (HS256, HS384, HS512)
+- Encode with custom claims (iss, sub, aud, exp)
+- Decode without verification (inspect token)
+- Verify with signature validation
+
+```bash
+# Encode a JWT with custom claims
+ut jwt encode --payload '{"user":"alice"}' --secret "my-secret" --issuer "my-app" --expires-in 3600
+
+# Decode a JWT without verification
+ut jwt decode eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Verify a JWT with signature validation
+ut jwt verify TOKEN --secret "my-secret" --issuer "my-app"
+```
+
+#### `password` (alias for `token`)
+The `password` command is an alias for the `token` tool. See the `token` section below for usage examples.
+
 ### Data Generation
 
 #### `uuid`
@@ -243,33 +263,24 @@ ut uuid v7
 ut uuid v7 --count 5
 ```
 
-#### `ulid`
-Generate and manipulate ULIDs (Universally Unique Lexicographically Sortable Identifiers).
-- Lexicographically sortable by creation time
-- 26-character Crockford Base32 encoding (vs UUID's 36 characters)
-- 128-bit compatibility with UUIDs
-- Parse to extract timestamp and components
-- Validate ULID strings
-- Convert between ULID and UUID formats
-
-```bash
-ut ulid                    # Generate 1 ULID
-ut ulid -c 5               # Generate 5 ULIDs
-ut ulid parse 01K7FW2PG44QTQZZR09SZCNAEF  # Show timestamp and details
-ut ulid validate 01K7FW2PG44QTQZZR09SZCNAEF  # Check if valid
-ut ulid to-uuid 01K7FW2PG44QTQZZR09SZCNAEF   # Convert to UUID
-ut ulid from-uuid 550e8400-e29b-41d4-a716-446655440000  # UUID to ULID
-echo -n 01K843W3XDX258EG219FWM5565 | ut ulid to-uuid -
-```
-
-#### `token` (alias: `secret`)
+#### `token` (aliases: `secret`, `password`)
 Generate cryptographically secure random tokens.
 - Customizable length and character sets
 - Uses OS-level secure randomness
+- Can be used for passwords, API keys, session tokens, etc.
 
 ```bash
+# Generate a 32-character token
 ut token --length 32
+
+# Generate a password (using alias)
+ut password --length 16
+
+# Generate without symbols
 ut secret --no-symbols --length 64
+
+# Generate without uppercase letters
+ut token --no-uppercase --length 20
 ```
 
 #### `lorem`
