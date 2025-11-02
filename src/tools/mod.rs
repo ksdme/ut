@@ -9,6 +9,7 @@ pub mod diff;
 pub mod hash;
 pub mod http;
 pub mod json;
+pub mod jwt;
 pub mod lorem;
 pub mod pp;
 pub mod qr;

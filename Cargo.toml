@@ -50,6 +50,7 @@ nom-language = "0.1.0"
 cron = "0.12.1"
 chrono = "0.4.42"
 bcrypt = "0.16"
+jsonwebtoken = "9.3"
 
 # The profile that 'dist' will build with
 [profile.dist]
