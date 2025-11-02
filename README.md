@@ -123,11 +123,10 @@ After setting up completions, restart your shell or source your configuration fi
 │   ├── bcrypt      - Password hashing and verification
 │   │   ├── hash
 │   │   └── verify
-│   ├── jwt         - JWT (JSON Web Token) utilities
-│   │   ├── encode
-│   │   ├── decode
-│   │   └── verify
-│   └── password (alias for token) - Secure password generation
+│   └── jwt         - JWT (JSON Web Token) utilities
+│       ├── encode
+│       ├── decode
+│       └── verify
 ├── Data Generation
 │   ├── uuid        - Generate UUIDs
 │   │   ├── v1
@@ -241,9 +240,6 @@ ut jwt decode eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 # Verify a JWT with signature validation
 ut jwt verify TOKEN --secret "my-secret" --issuer "my-app"
 ```
-
-#### `password` (alias for `token`)
-The `password` command is an alias for the `token` tool. See the `token` section below for usage examples.
 
 ### Data Generation
 

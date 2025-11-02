@@ -22,7 +22,7 @@ macro_rules! toolbox {
                 $cmd = $cmd.subcommand(
                     <$tool>::cli()
                     .name($name)
-                    $(.alias($alias))*
+                    $(.visible_alias($alias))*
                 );
             )*
 

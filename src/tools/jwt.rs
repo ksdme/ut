@@ -188,7 +188,6 @@ fn decode_jwt(token: &str) -> Result<Option<Output>> {
         },
         "payload": token_data.claims,
         "signature": parts[2],
-        "note": "Token decoded without verification"
     });
 
     Ok(Some(Output::JsonValue(result)))
