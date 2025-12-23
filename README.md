@@ -159,6 +159,7 @@ After setting up completions, restart your shell or source your configuration fi
 │   │   └── schedule
 │   └── datetime (dt) - Parse and convert datetimes
 ├── Web & Network
+│   ├── cidr        - CIDR calculator
 │   ├── http        - HTTP utilities
 │   │   └── status
 │   ├── serve       - Local HTTP file server
@@ -398,6 +399,19 @@ echo -n "2025-10-04T15:30:00Z" | ut datetime -
 ```
 
 ### Web & Network
+
+#### `cidr`
+CIDR calculator for computing network information from CIDR notation.
+- Displays address, network, and broadcast in string, decimal, and hex formats
+- Calculates usable host range and total host count
+- Shows netmask and wildcard masks
+
+```bash
+ut cidr 192.168.1.100/24
+ut cidr 10.0.0.0/8
+ut cidr 172.16.0.1/16
+echo -n "192.168.1.0/24" | ut cidr -
+```
 
 #### `http`
 HTTP utilities including status code lookup.
