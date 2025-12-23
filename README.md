@@ -109,9 +109,10 @@ After setting up completions, restart your shell or source your configuration fi
 │   ├── base64      - Base64 encode/decode
 │   │   ├── encode
 │   │   └── decode
-│   └── url         - URL encode/decode
+│   └── url         - URL encode/decode/parse
 │       ├── encode
-│       └── decode
+│       ├── decode
+│       └── parse
 ├── Hashing & Security
 │   ├── hash        - Cryptographic hash digests
 │   │   ├── md5
@@ -185,11 +186,12 @@ echo -n "hello world" | ut base64 encode -
 ```
 
 #### `url`
-URL encode and decode text.
+URL encode, decode, and parse URLs.
 
 ```bash
 ut url encode "hello world"
 ut url decode "hello%20world"
+ut url parse "https://example.com:8080/path?key=value#section"
 printf "hello world" | ut url encode -
 ```
 
