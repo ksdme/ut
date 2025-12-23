@@ -50,10 +50,27 @@ impl Tool for UrlTool {
             UrlCommand::Parse { url } => {
                 let parsed = Url::parse(url.as_ref()).context("Could not parse URL")?;
 
-                // Build query params as a JSON object
-                let query_params: serde_json::Map<String, serde_json::Value> = parsed
-                    .query_pairs()
-                    .map(|(k, v)| (k.into_owned(), serde_json::json!(v)))
+                // Group query params by key to handle duplicates
+                let mut grouped: std::collections::HashMap<String, Vec<String>> =
+                    std::collections::HashMap::new();
+                for (k, v) in parsed.query_pairs() {
+                    grouped
+                        .entry(k.into_owned())
+                        .or_default()
+                        .push(v.into_owned());
+                }
+
+                // Convert to JSON: single value → string, multiple values → array
+                let query_params: serde_json::Map<String, serde_json::Value> = grouped
+                    .into_iter()
+                    .map(|(k, v)| {
+                        let value = if v.len() == 1 {
+                            serde_json::json!(v.into_iter().next().unwrap())
+                        } else {
+                            serde_json::json!(v)
+                        };
+                        (k, value)
+                    })
                     .collect();
 
                 let result = serde_json::json!({
@@ -312,6 +329,24 @@ mod tests {
         assert_eq!(val["query"], "key1=value1&key2=value2");
         assert_eq!(val["query_params"]["key1"], "value1");
         assert_eq!(val["query_params"]["key2"], "value2");
+    }
+
+    #[test]
+    fn test_parse_url_with_duplicate_query_params() {
+        let tool = UrlTool {
+            command: UrlCommand::Parse {
+                url: StringInput("https://example.com/search?a=1&a=2&b=3".to_string()),
+            },
+        };
+        let result = tool.execute().unwrap().unwrap();
+
+        let Output::JsonValue(val) = result else {
+            unreachable!()
+        };
+        // Duplicate key 'a' should be an array
+        assert_eq!(val["query_params"]["a"], serde_json::json!(["1", "2"]));
+        // Single key 'b' should be a string
+        assert_eq!(val["query_params"]["b"], "3");
     }
 
     #[test]
