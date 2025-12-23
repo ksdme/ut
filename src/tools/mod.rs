@@ -2,6 +2,7 @@ pub mod base64;
 pub mod bcrypt;
 pub mod calc;
 pub mod case;
+pub mod cidr;
 pub mod color;
 pub mod crontab;
 pub mod datetime;

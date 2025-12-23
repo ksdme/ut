@@ -71,6 +71,7 @@ fn main() -> anyhow::Result<()> {
         (tools::bcrypt::BcryptTool, "bcrypt",),
         (tools::calc::CalcTool, "calc", "cal"),
         (tools::case::CaseTool, "case",),
+        (tools::cidr::CidrTool, "cidr",),
         (tools::color::ColorTool, "color",),
         (tools::crontab::CrontabTool, "crontab", "cron"),
         (tools::datetime::DateTimeTool, "datetime", "dt"),
