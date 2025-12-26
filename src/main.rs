@@ -61,6 +61,12 @@ macro_rules! toolbox {
 
 fn main() -> anyhow::Result<()> {
     let mut cli = clap::builder::Command::new("ut")
+        .arg(
+            clap::Arg::new("json")
+                .long("json")
+                .help("For tools that output structured data, format it as JSON")
+                .action(clap::ArgAction::SetTrue),
+        )
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(Completions::command().name("completions"));
@@ -93,7 +99,7 @@ fn main() -> anyhow::Result<()> {
     .context("Could not run tool")?;
 
     match output {
-        Some(output) => output.flush(true),
+        Some(output) => output.flush(cli.get_matches().get_flag("json")),
         None => Ok(()),
     }
 }

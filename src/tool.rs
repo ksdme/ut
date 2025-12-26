@@ -26,7 +26,7 @@ pub enum Output {
 
 impl Output {
     // Write out the output.
-    pub fn flush(&self, human: bool) -> anyhow::Result<()> {
+    pub fn flush(&self, structured: bool) -> anyhow::Result<()> {
         match self {
             Output::Bytes(bytes) => {
                 io::stdout()
@@ -34,10 +34,10 @@ impl Output {
                     .context("Could not write bytes to stdout")?;
             }
             Output::JsonValue(value) => {
-                if human {
-                    println!("{}", value_to_string(value));
-                } else {
+                if structured {
                     println!("{}", value.to_string());
+                } else {
+                    println!("{}", value_to_string(value));
                 }
             }
             Output::Text(text) => {
