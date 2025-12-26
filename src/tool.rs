@@ -26,7 +26,7 @@ pub enum Output {
 
 impl Output {
     // Write out the output.
-    pub fn flush(&self) -> anyhow::Result<()> {
+    pub fn flush(&self, human: bool) -> anyhow::Result<()> {
         match self {
             Output::Bytes(bytes) => {
                 io::stdout()
@@ -34,7 +34,11 @@ impl Output {
                     .context("Could not write bytes to stdout")?;
             }
             Output::JsonValue(value) => {
-                print_json_value(&value)?;
+                if human {
+                    println!("{}", value_to_string(value));
+                } else {
+                    println!("{}", value.to_string());
+                }
             }
             Output::Text(text) => {
                 println!("{}", text);
@@ -45,12 +49,11 @@ impl Output {
     }
 }
 
-fn print_json_value(value: &Value) -> anyhow::Result<()> {
+fn value_to_string(value: &Value) -> String {
     match value {
-        Value::Object(obj) => {
-            if obj.is_empty() {
-                println!("{{}}");
-                return Ok(());
+        Value::Object(o) => {
+            if o.is_empty() {
+                return "{}".to_owned();
             }
 
             #[derive(Tabled)]
@@ -59,7 +62,7 @@ fn print_json_value(value: &Value) -> anyhow::Result<()> {
                 value: String,
             }
 
-            let rows: Vec<KeyValue> = obj
+            let rows: Vec<KeyValue> = o
                 .iter()
                 .map(|(k, v)| KeyValue {
                     key: k.clone(),
@@ -73,27 +76,25 @@ fn print_json_value(value: &Value) -> anyhow::Result<()> {
                 .with(Remove::row(Rows::first()))
                 .with(Padding::new(0, 1, 0, 0));
 
-            println!("{}", table);
+            table.to_string()
         }
+        Value::Array(a) => {
+            let items = a
+                .iter()
+                .map(|val| value_to_string(val))
+                .collect::<Vec<String>>();
 
-        Value::Array(arr) => {
-            for elem in arr {
-                print_json_value(elem)?;
-            }
+            let mut table = Table::new(items);
+            table
+                .with(Style::empty())
+                .with(Remove::row(Rows::first()))
+                .with(Padding::new(0, 1, 0, 0));
+
+            table.to_string()
         }
-
-        _ => println!("{}", value_to_string(value)),
-    }
-
-    Ok(())
-}
-
-fn value_to_string(value: &Value) -> String {
-    match value {
-        Value::Null => "null".to_string(),
+        Value::String(s) => s.clone(),
         Value::Bool(b) => b.to_string(),
         Value::Number(n) => n.to_string(),
-        Value::String(s) => s.clone(),
-        _ => serde_json::to_string(value).unwrap_or_default(),
+        Value::Null => "null".to_string(),
     }
 }

@@ -13,6 +13,11 @@ pub struct UrlTool {
 
 #[derive(Subcommand, Debug)]
 enum UrlCommand {
+    /// Parse URL into its components
+    Parse {
+        /// URL to parse (use "-" for stdin)
+        url: StringInput,
+    },
     /// URL encode text
     Encode {
         /// Text to URL encode (use "-" for stdin)
@@ -23,11 +28,6 @@ enum UrlCommand {
         /// Text to URL decode (use "-" for stdin)
         text: StringInput,
     },
-    /// Parse URL into its components
-    Parse {
-        /// URL to parse (use "-" for stdin)
-        url: StringInput,
-    },
 }
 
 impl Tool for UrlTool {
@@ -37,6 +37,20 @@ impl Tool for UrlTool {
 
     fn execute(&self) -> anyhow::Result<Option<Output>> {
         match &self.command {
+            UrlCommand::Parse { url } => {
+                let (parsed, query_params) = parse_url(url.as_ref())?;
+                Ok(Some(Output::JsonValue(serde_json::json!({
+                    "scheme": parsed.scheme(),
+                    "host": parsed.host_str(),
+                    "port": parsed.port(),
+                    "path": parsed.path(),
+                    "query": parsed.query(),
+                    "query_params": query_params,
+                    "fragment": parsed.fragment(),
+                    "username": if parsed.username().is_empty() { None } else { Some(parsed.username()) },
+                    "password": parsed.password(),
+                }))))
+            }
             UrlCommand::Encode { text } => {
                 let result = urlencoding::encode(text.as_ref()).into_owned();
                 Ok(Some(Output::JsonValue(serde_json::json!(result))))
@@ -47,48 +61,47 @@ impl Tool for UrlTool {
                     .into_owned();
                 Ok(Some(Output::JsonValue(serde_json::json!(result))))
             }
-            UrlCommand::Parse { url } => {
-                let parsed = Url::parse(url.as_ref()).context("Could not parse URL")?;
-
-                // Group query params by key to handle duplicates
-                let mut grouped: std::collections::HashMap<String, Vec<String>> =
-                    std::collections::HashMap::new();
-                for (k, v) in parsed.query_pairs() {
-                    grouped
-                        .entry(k.into_owned())
-                        .or_default()
-                        .push(v.into_owned());
-                }
-
-                // Convert to JSON: single value → string, multiple values → array
-                let query_params: serde_json::Map<String, serde_json::Value> = grouped
-                    .into_iter()
-                    .map(|(k, v)| {
-                        let value = if v.len() == 1 {
-                            serde_json::json!(v.into_iter().next().unwrap())
-                        } else {
-                            serde_json::json!(v)
-                        };
-                        (k, value)
-                    })
-                    .collect();
-
-                let result = serde_json::json!({
-                    "scheme": parsed.scheme(),
-                    "host": parsed.host_str(),
-                    "port": parsed.port_or_known_default(),
-                    "path": parsed.path(),
-                    "query": parsed.query(),
-                    "query_params": query_params,
-                    "fragment": parsed.fragment(),
-                    "username": parsed.username(),
-                    "password": parsed.password(),
-                });
-
-                Ok(Some(Output::JsonValue(result)))
-            }
         }
     }
+}
+
+// Prases a url into its components and a list of grouped parameters.
+fn parse_url(
+    url: &str,
+) -> anyhow::Result<(Url, Option<serde_json::Map<String, serde_json::Value>>)> {
+    let parsed = Url::parse(url.as_ref()).context("Could not parse URL")?;
+
+    // Group query params by key to handle duplicates.
+    let mut grouped: std::collections::HashMap<String, Vec<String>> =
+        std::collections::HashMap::new();
+    for (k, v) in parsed.query_pairs() {
+        grouped
+            .entry(k.into_owned())
+            .or_default()
+            .push(v.into_owned());
+    }
+
+    // Serialize: single value → string, multiple values → array.
+    let query_params: serde_json::Map<String, serde_json::Value> = grouped
+        .into_iter()
+        .map(|(k, v)| {
+            let value = if v.len() == 1 {
+                serde_json::json!(v.into_iter().next().unwrap())
+            } else {
+                serde_json::json!(v)
+            };
+            (k, value)
+        })
+        .collect();
+
+    Ok((
+        parsed,
+        if query_params.is_empty() {
+            None
+        } else {
+            Some(query_params)
+        },
+    ))
 }
 
 #[cfg(test)]
@@ -308,8 +321,8 @@ mod tests {
         };
         assert_eq!(val["scheme"], "https");
         assert_eq!(val["host"], "example.com");
-        assert_eq!(val["port"], 443);
         assert_eq!(val["path"], "/path");
+        assert!(val["port"].is_null());
         assert!(val["query"].is_null());
         assert!(val["fragment"].is_null());
     }

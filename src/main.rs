@@ -93,7 +93,7 @@ fn main() -> anyhow::Result<()> {
     .context("Could not run tool")?;
 
     match output {
-        Some(output) => output.flush(),
+        Some(output) => output.flush(true),
         None => Ok(()),
     }
 }
