@@ -26,6 +26,11 @@ enum CaseCommand {
         /// Text to convert (use "-" for stdin)
         text: StringInput,
     },
+    /// Convert text to PascalCase
+    Pascal {
+        /// Text to convert (use "-" for stdin)
+        text: StringInput,
+    },
     /// Convert text to Title Case
     Title {
         /// Text to convert (use "-" for stdin)
@@ -68,6 +73,7 @@ impl Tool for CaseTool {
             CaseCommand::Lower { text } => to_lowercase(text.as_ref()),
             CaseCommand::Upper { text } => to_uppercase(text.as_ref()),
             CaseCommand::Camel { text } => to_camel_case(text.as_ref()),
+            CaseCommand::Pascal { text } => to_pascal_case(text.as_ref()),
             CaseCommand::Title { text } => to_title_case(text.as_ref()),
             CaseCommand::Constant { text } => to_constant_case(text.as_ref()),
             CaseCommand::Header { text } => to_header_case(text.as_ref()),
@@ -104,6 +110,15 @@ fn to_camel_case(text: &str) -> String {
         }
     }
     result
+}
+
+// Pascal Case
+fn to_pascal_case(text: &str) -> String {
+    split_words(text)
+        .iter()
+        .map(|word| capitalize_first(word))
+        .collect::<Vec<_>>()
+        .join("")
 }
 
 // Title Case
@@ -241,6 +256,17 @@ mod tests {
         assert_eq!(to_camel_case("HelloWorld"), "helloWorld");
         assert_eq!(to_camel_case("single"), "single");
         assert_eq!(to_camel_case(""), "");
+    }
+
+    #[test]
+    fn test_pascal_case() {
+        assert_eq!(to_pascal_case("hello world"), "HelloWorld");
+        assert_eq!(to_pascal_case("Hello World"), "HelloWorld");
+        assert_eq!(to_pascal_case("HELLO_WORLD"), "HelloWorld");
+        assert_eq!(to_pascal_case("hello-world"), "HelloWorld");
+        assert_eq!(to_pascal_case("HelloWorld"), "HelloWorld");
+        assert_eq!(to_pascal_case("single"), "Single");
+        assert_eq!(to_pascal_case(""), "");
     }
 
     #[test]
