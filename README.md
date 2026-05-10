@@ -165,6 +165,12 @@ After setting up completions, restart your shell or source your configuration fi
 │   │       └── describe
 │   ├── http        - HTTP utilities
 │   │   └── status
+│   ├── proc        - Process and port utilities
+│   │   ├── list
+│   │   ├── name
+│   │   ├── pid
+│   │   ├── port
+│   │   └── ports
 │   ├── serve       - Local HTTP file server
 │   └── qr          - Generate QR codes
 ├── Color & Design
@@ -419,6 +425,33 @@ HTTP utilities including status code lookup.
 ```bash
 ut http status 404
 ut http status  # List all status codes
+```
+
+#### `proc`
+Query running processes and find which process owns a given TCP port.
+- List all running processes, optionally filtered by name
+- Look up a specific process by PID
+- Identify which process is listening on a port
+- List all open TCP listening ports with their owning process
+- Cross-platform: Linux (reads `/proc/net/tcp` directly), macOS (uses `lsof`), Windows (uses `netstat`)
+- Processes owned by other users may require elevated privileges
+
+```bash
+# List all running processes
+ut proc list
+
+# Filter by name (case-insensitive substring match)
+ut proc list --name node
+ut proc name nginx
+
+# Inspect a process by PID
+ut proc pid 1234
+
+# Find what's listening on port 3000
+ut proc port 3000
+
+# List every open TCP listening port with its owning process
+ut proc ports
 ```
 
 #### `serve`

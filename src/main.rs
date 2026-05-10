@@ -88,6 +88,7 @@ fn main() -> anyhow::Result<()> {
         (tools::jwt::JwtTool, "jwt",),
         (tools::lorem::LoremTool, "lorem",),
         (tools::pp::PrettyPrintTool, "pretty-print", "pp"),
+        (tools::proc::ProcTool, "proc",),
         (tools::qr::QRTool, "qr",),
         (tools::random::RandomTool, "random",),
         (tools::regex::RegexTool, "regex",),

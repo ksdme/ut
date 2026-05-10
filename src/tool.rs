@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::io::{self, Write};
 use tabled::{
     Table, Tabled,
+    builder::Builder,
     settings::{Padding, Remove, Style, object::Rows},
 };
 
@@ -21,6 +22,9 @@ pub trait Tool {
 pub enum Output {
     Bytes(Vec<u8>),
     JsonValue(serde_json::Value),
+    /// An array of homogeneous objects rendered as a columnar table in human
+    /// mode and as a JSON array when `--json` is passed.
+    Table(serde_json::Value),
     Text(String),
 }
 
@@ -40,6 +44,15 @@ impl Output {
                     println!("{}", value_to_string(value));
                 }
             }
+            Output::Table(value) => {
+                if structured {
+                    println!("{}", value);
+                } else if let Value::Array(rows) = value {
+                    println!("{}", render_object_table(rows));
+                } else {
+                    println!("{}", value_to_string(value));
+                }
+            }
             Output::Text(text) => {
                 println!("{}", text);
             }
@@ -47,6 +60,34 @@ impl Output {
 
         Ok(())
     }
+}
+
+/// Renders a slice of JSON objects as a columnar table.
+/// Column order follows the key insertion order of the first row.
+fn render_object_table(rows: &[Value]) -> String {
+    let Some(Value::Object(first)) = rows.first() else {
+        return String::new();
+    };
+
+    let headers: Vec<String> = first.keys().cloned().collect();
+    let mut builder = Builder::default();
+    builder.push_record(headers.iter().map(String::as_str));
+
+    for row in rows {
+        if let Value::Object(obj) = row {
+            let vals: Vec<String> = headers
+                .iter()
+                .map(|h| value_to_string(obj.get(h).unwrap_or(&Value::Null)))
+                .collect();
+            builder.push_record(vals.iter().map(String::as_str));
+        }
+    }
+
+    let mut table = builder.build();
+    table
+        .with(Style::empty())
+        .with(Padding::new(0, 2, 0, 0));
+    table.to_string()
 }
 
 fn value_to_string(value: &Value) -> String {
