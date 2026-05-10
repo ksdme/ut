@@ -13,6 +13,7 @@ pub mod json;
 pub mod jwt;
 pub mod lorem;
 pub mod pp;
+pub mod proc;
 pub mod qr;
 pub mod random;
 pub mod regex;
