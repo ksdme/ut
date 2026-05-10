@@ -48,11 +48,25 @@ enum ProcCommand {
         /// Filter by process name (case-insensitive substring match)
         #[arg(long, short = 'n')]
         name: Option<String>,
+
+        /// Include the full command line arguments for each process
+        ///
+        /// On Windows, reading command line arguments of other users'
+        /// processes may require elevated privileges.
+        #[arg(long, short = 'c')]
+        cmd: bool,
     },
     /// Find all processes whose name contains the given string
     Name {
         /// Process name to search for (case-insensitive substring match)
         name: String,
+
+        /// Include the full command line arguments for each process
+        ///
+        /// On Windows, reading command line arguments of other users'
+        /// processes may require elevated privileges.
+        #[arg(long, short = 'c')]
+        cmd: bool,
     },
     /// Show full details for a specific process ID
     Pid {
@@ -99,12 +113,12 @@ impl Tool for ProcTool {
 
     fn execute(&self) -> Result<Option<Output>> {
         match &self.command {
-            ProcCommand::List { name } => {
-                let processes = list_processes(name.as_deref())?;
+            ProcCommand::List { name, cmd } => {
+                let processes = list_processes(name.as_deref(), *cmd)?;
                 Ok(Some(Output::Table(json!(processes))))
             }
-            ProcCommand::Name { name } => {
-                let processes = list_processes(Some(name.as_str()))?;
+            ProcCommand::Name { name, cmd } => {
+                let processes = list_processes(Some(name.as_str()), *cmd)?;
                 Ok(Some(Output::Table(json!(processes))))
             }
             ProcCommand::Pid { pid } => {
@@ -146,17 +160,30 @@ fn process_to_json(pid: u32, proc: &sysinfo::Process) -> Value {
 }
 
 /// Compact process row — used by the `list` subcommand table.
-fn process_row_json(pid: u32, proc: &sysinfo::Process) -> Value {
-    json!({
+/// When `show_cmd` is true, a `cmd` column with the full command line is appended.
+fn process_row_json(pid: u32, proc: &sysinfo::Process, show_cmd: bool) -> Value {
+    let mut row = json!({
         "pid": pid,
         "name": proc.name().to_string_lossy(),
         "status": format!("{:?}", proc.status()),
         "memory_bytes": proc.memory(),
         "cpu_usage": proc.cpu_usage(),
-    })
+    });
+
+    if show_cmd {
+        let cmd = proc
+            .cmd()
+            .iter()
+            .map(|s| s.to_string_lossy().into_owned())
+            .collect::<Vec<_>>()
+            .join(" ");
+        row["cmd"] = json!(cmd);
+    }
+
+    row
 }
 
-fn list_processes(name_filter: Option<&str>) -> Result<Vec<Value>> {
+fn list_processes(name_filter: Option<&str>, show_cmd: bool) -> Result<Vec<Value>> {
     let sys = new_system();
     let mut procs: Vec<Value> = sys
         .processes()
@@ -169,7 +196,7 @@ fn list_processes(name_filter: Option<&str>) -> Result<Vec<Value>> {
                     .contains(&filter.to_lowercase())
             })
         })
-        .map(|(pid, p)| process_row_json(pid.as_u32(), p))
+        .map(|(pid, p)| process_row_json(pid.as_u32(), p, show_cmd))
         .collect();
     procs.sort_by_key(|p| p["pid"].as_u64().unwrap_or(0));
     Ok(procs)
@@ -464,13 +491,13 @@ mod tests {
 
     #[test]
     fn test_list_processes_non_empty() {
-        let procs = list_processes(None).unwrap();
+        let procs = list_processes(None, false).unwrap();
         assert!(!procs.is_empty(), "at least one process must be running");
     }
 
     #[test]
     fn test_list_processes_fields_present() {
-        let procs = list_processes(None).unwrap();
+        let procs = list_processes(None, false).unwrap();
         for p in &procs {
             assert!(p["pid"].is_number(), "every process entry must have a numeric pid");
             assert!(p["name"].is_string(), "every process entry must have a string name");
@@ -480,7 +507,7 @@ mod tests {
 
     #[test]
     fn test_list_processes_sorted_by_pid() {
-        let procs = list_processes(None).unwrap();
+        let procs = list_processes(None, false).unwrap();
         let pids: Vec<u64> = procs.iter().filter_map(|p| p["pid"].as_u64()).collect();
         let mut sorted = pids.clone();
         sorted.sort();
@@ -489,12 +516,30 @@ mod tests {
 
     #[test]
     fn test_list_processes_name_filter_is_subset() {
-        let all = list_processes(None).unwrap();
-        let filtered = list_processes(Some("zzz_unlikely_process_name_xyz")).unwrap();
+        let all = list_processes(None, false).unwrap();
+        let filtered = list_processes(Some("zzz_unlikely_process_name_xyz"), false).unwrap();
         assert!(
             filtered.len() <= all.len(),
             "filtered list must not exceed total process count"
         );
+    }
+
+    #[test]
+    fn test_list_processes_cmd_flag_adds_column() {
+        // Test each call independently — comparing counts across two separate
+        // system snapshots is a race condition since processes can appear or
+        // disappear between calls.
+        let with_cmd = list_processes(None, true).unwrap();
+        assert!(!with_cmd.is_empty());
+        for p in &with_cmd {
+            assert!(p["cmd"].is_string(), "every entry must have a cmd string when --cmd is set");
+        }
+
+        let without = list_processes(None, false).unwrap();
+        assert!(!without.is_empty());
+        for p in &without {
+            assert!(p.get("cmd").is_none(), "cmd column must be absent without --cmd");
+        }
     }
 
     #[test]
